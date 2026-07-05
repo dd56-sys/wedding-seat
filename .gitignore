@@ -1,0 +1,4 @@
+# 本機測試用的真實設定值，不要提交（部署時由 GitHub Actions 自動產生）
+config.js
+
+.DS_Store

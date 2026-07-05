@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js" onerror="window.APP_CONFIG=window.APP_CONFIG||{}"></script>
 <style>
   :root{
     --ivory:#FAF6EF;
@@ -201,17 +202,21 @@
 
     <div class="sec">
       <div class="sec-title">雲端同步（Supabase）</div>
-      <div class="form-grid">
+      <div id="syncManualFields" class="form-grid">
         <input id="sbUrl" placeholder="Supabase Project URL" />
         <input id="sbKey" placeholder="Supabase anon public key" />
         <input id="sbCode" placeholder="活動代碼（自訂，跨裝置需輸入相同代碼）" />
         <div class="row-2">
-          <button class="btn btn-primary btn-block" onclick="connectSupabase()">連接並同步</button>
+          <button class="btn btn-primary btn-block" id="btnConnect" onclick="connectSupabase()">連接並同步</button>
           <button class="btn btn-sm" onclick="disconnectSupabase()">中斷</button>
         </div>
       </div>
       <div class="sync-status"><span class="dot-status" id="syncDot"></span><span id="syncStatus">尚未連接雲端同步</span></div>
-      <div class="hint"><a href="#" onclick="toggleSqlHelp();return false;">第一次使用？查看資料庫建立教學</a></div>
+      <div class="hint">
+        <a href="#" onclick="toggleSqlHelp();return false;">查看資料庫建立教學</a>
+        ／
+        <a href="#" onclick="toggleDeployHelp();return false;">查看 GitHub Actions 部署教學</a>
+      </div>
       <div id="sqlHelp" style="display:none;margin-top:6px;">
 <pre class="sql-box">-- 在 Supabase SQL Editor 執行一次即可
 create table wedding_seating_data (
@@ -228,6 +233,15 @@ create policy "allow anon all"
 -- 開啟右側 Realtime 開關，
 -- 即可讓多裝置即時同步。</pre>
         <div class="hint">Project URL 與 anon key 可在 Supabase 專案的 Settings → API 找到。「活動代碼」是你自訂的代號（例如 wedding2026），所有裝置輸入相同代碼即可共用同一份資料。</div>
+      </div>
+      <div id="deployHelp" style="display:none;margin-top:6px;">
+        <div class="hint">
+          這個 repo 裡的 <code>.github/workflows/deploy-pages.yml</code> 會在每次 push 到 main 時自動執行，用 GitHub repo 的 Secrets 產生 <code>config.js</code> 並部署到 GitHub Pages，網頁開啟後會自動讀取並連線，不需要手動輸入上面的欄位。設定步驟：<br>
+          1. repo 的 <b>Settings → Secrets and variables → Actions</b>，新增三個 Repository secrets：<code>SUPABASE_URL</code>、<code>SUPABASE_ANON_KEY</code>、<code>EVENT_CODE</code><br>
+          2. repo 的 <b>Settings → Pages</b>，Source 選「GitHub Actions」<br>
+          3. push 到 main 分支，到 repo 的 <b>Actions</b> 分頁即可看到執行紀錄；成功後 Pages 網址就會是你的線上版本<br>
+          本機測試可複製 <code>config.example.js</code> 為 <code>config.js</code> 並填入真實值（已加入 .gitignore，不會被提交）。
+        </div>
       </div>
     </div>
 
@@ -294,6 +308,7 @@ let syncEventCode = null;
 let saveTimer = null;
 let isApplyingRemote = false;
 let realtimeChannel = null;
+const CFG = window.APP_CONFIG || {};
 
 /* ---------------- icons ---------------- */
 function mealColor(meal){
@@ -568,6 +583,7 @@ function triggerDownload(filename, content){
 function onSearchInput(v){ searchTerm=v.trim(); renderGuestList(); }
 function setFilter(cat){ filterCategory=cat; render(); }
 function toggleSqlHelp(){ const el=document.getElementById('sqlHelp'); el.style.display = el.style.display==='none' ? 'block' : 'none'; }
+function toggleDeployHelp(){ const el=document.getElementById('deployHelp'); el.style.display = el.style.display==='none' ? 'block' : 'none'; }
 
 /* ---------------- Supabase sync ---------------- */
 function setSyncStatus(msg, state){
@@ -650,6 +666,18 @@ function subscribeRealtime(){
     }).subscribe();
 }
 async function tryAutoConnect(){
+  if(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && CFG.EVENT_CODE){
+    document.getElementById('sbUrl').value = CFG.SUPABASE_URL;
+    document.getElementById('sbKey').value = CFG.SUPABASE_ANON_KEY;
+    document.getElementById('sbCode').value = CFG.EVENT_CODE;
+    document.getElementById('sbUrl').readOnly = true;
+    document.getElementById('sbKey').readOnly = true;
+    document.getElementById('sbCode').readOnly = true;
+    document.getElementById('btnConnect').style.display = 'none';
+    setSyncStatus('設定值來自 config.js，連接中...', 'busy');
+    await connectSupabase();
+    return;
+  }
   try{
     const res = await window.storage.get('supabase-config');
     if(res && res.value){
