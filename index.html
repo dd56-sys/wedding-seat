@@ -133,7 +133,7 @@
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
     box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
   .seat-badge svg{width:17px;height:17px;display:block;}
-  .seat-name{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;line-height:1.2;}
+  .seat-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;line-height:1.2;}
   .seat-remove{position:absolute;top:1px;right:2px;font-size:10px;color:#00000055;line-height:1;padding:2px;z-index:6;}
   .seat-remove:hover{color:var(--danger);}
 
@@ -156,9 +156,9 @@
 <body>
 
 <div class="app-header">
-  <h1>喜迎佳期 · 婚宴座位編排</h1>
+  <h1 id="appTitle" onclick="onTitleClick()" style="cursor:default;">喜迎佳期 · 婚宴座位編排</h1>
   <div class="rule"></div>
-  <p>拖曳桌子安排位置，拖曳或點選賓客安排座位，可跨裝置同步</p>
+  <p>拖曳桌子安排位置，拖曳或點選賓客安排座位</p>
 </div>
 
 <div class="app-body">
@@ -200,7 +200,7 @@
       <div class="hint">請使用 UTF-8 CSV，欄位需含「姓名」「主餐」「歸屬」（順序不拘）。</div>
     </div>
 
-    <div class="sec">
+    <div class="sec" id="syncSection" style="display:none;">
       <div class="sec-title">雲端同步（Supabase）</div>
       <div id="syncManualFields" class="form-grid">
         <input id="sbUrl" placeholder="Supabase Project URL" />
@@ -789,11 +789,32 @@ function renderTables(){
   updateCanvasFrame();
 }
 
+/* ---------------- hidden sync panel toggle ---------------- */
+let titleClickCount = 0;
+let titleClickTimer = null;
+function onTitleClick(){
+  titleClickCount++;
+  clearTimeout(titleClickTimer);
+  titleClickTimer = setTimeout(()=>{ titleClickCount = 0; }, 2500);
+  if(titleClickCount >= 5){
+    titleClickCount = 0;
+    const el = document.getElementById('syncSection');
+    el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+  }
+}
+function checkAdminAccess(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('admin') === '1'){
+    document.getElementById('syncSection').style.display = 'block';
+  }
+}
+
 /* ---------------- init ---------------- */
 addTable();
 addTable();
 render();
 tryAutoConnect();
+checkAdminAccess();
 </script>
 </body>
 </html>
