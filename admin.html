@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>婚宴座位編排</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js" onerror="window.APP_CONFIG=window.APP_CONFIG||{}"></script>
+<style>
+  :root{
+    --ivory:#FAF6EF;
+    --card:#FFFFFF;
+    --ink:#332C27;
+    --ink-soft:#6E645A;
+    --gold:#B8935A;
+    --gold-light:#EFE2C9;
+    --line:#E7DED2;
+    --danger:#B85C5C;
+
+    --groom:#2E6DA4;    --groom-bg:#E3EEF7;
+    --bride:#C0453B;    --bride-bg:#F8E5E3;
+    --both:#3F8F5C;     --both-bg:#E5F3E9;
+    --other:#9a8f7c;    --other-bg:#F1EDE4;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Noto Sans TC',sans-serif;background:var(--ivory);color:var(--ink);}
+  h1,h2,h3{font-family:'Noto Serif TC',serif;margin:0;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+  a{color:var(--gold);}
+
+  .app-header{padding:20px 28px 16px;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);text-align:center;position:relative;}
+  .app-header h1{font-size:25px;font-weight:600;letter-spacing:2px;}
+  .app-header .rule{width:90px;height:2px;margin:9px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .app-header p{margin:0;color:var(--ink-soft);font-size:13px;letter-spacing:1px;}
+
+  .app-body{display:flex;align-items:flex-start;min-height:calc(100vh - 96px);}
+  .sidebar{width:340px;flex:none;background:var(--card);border-right:1px solid var(--line);height:calc(100vh - 96px);overflow-y:auto;padding:18px;}
+  .canvas-wrap{flex:1;height:calc(100vh - 96px);overflow:auto;position:relative;
+    background-color:#F6F1E8;background-image:radial-gradient(circle,#e4dac6 1px,transparent 1px);background-size:24px 24px;}
+
+  .sec{margin-bottom:20px;}
+  .sec-title{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+  .sec-title::before{content:"";width:12px;height:1px;background:var(--gold);}
+
+  .form-grid{display:flex;flex-direction:column;gap:8px;}
+  .form-grid input, .form-grid select{padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;background:#fffefb;color:var(--ink);width:100%;}
+  .form-grid input:focus, .form-grid select:focus{outline:2px solid var(--gold-light);border-color:var(--gold);}
+  .btn{padding:9px 14px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap;}
+  .btn:hover{border-color:var(--gold);color:var(--gold);}
+  .btn-primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .btn-primary:hover{background:var(--gold);border-color:var(--gold);color:#fff;}
+  .btn-gold{background:var(--gold);color:#fff;border-color:var(--gold);}
+  .btn-gold:hover{background:#a17f4a;}
+  .btn-block{width:100%;}
+  .btn-sm{padding:6px 10px;font-size:12px;}
+  .row-2{display:flex;gap:8px;}
+  .row-2 > *{flex:1;}
+  .hint{font-size:11.5px;color:var(--ink-soft);line-height:1.5;margin-top:4px;}
+  .file-btn{position:relative;overflow:hidden;display:inline-block;}
+  .file-btn input[type=file]{position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;}
+
+  .stats-box{background:var(--ivory);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.9;}
+  .stats-box .stat-line{display:flex;justify-content:space-between;align-items:center;}
+  .stats-box .stat-label{color:var(--ink-soft);display:flex;align-items:center;gap:5px;}
+  .stats-box .stat-label svg{width:14px;height:14px;}
+  .warn{color:var(--danger);font-weight:600;}
+
+  .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .chip-filter{padding:5px 10px;border-radius:20px;border:1px solid var(--line);font-size:12px;background:#fff;color:var(--ink-soft);}
+  .chip-filter.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .search-input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;margin-bottom:8px;}
+
+  #guestList{display:flex;flex-direction:column;gap:6px;min-height:60px;border-radius:8px;padding:4px;}
+  #guestList.drop-hover{background:var(--gold-light);}
+  .chip{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:7px;border:1.5px solid var(--line);background:#fff;font-size:13px;cursor:grab;}
+  .chip.selected{box-shadow:0 0 0 2px var(--gold);border-color:var(--gold);}
+  .chip-icon{flex:none;width:18px;height:18px;}
+  .chip-icon svg{width:100%;height:100%;display:block;}
+  .chip-name{font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chip-meal{font-size:11px;color:var(--ink-soft);flex:none;}
+  .chip-del{opacity:.45;flex:none;font-size:12px;}
+  .chip-del:hover{opacity:1;color:var(--danger);}
+  .empty-hint{color:var(--ink-soft);font-size:12.5px;padding:14px 6px;text-align:center;border:1px dashed var(--line);border-radius:8px;}
+
+  .cat-groom{background:var(--groom-bg);border-color:var(--groom);}
+  .cat-bride{background:var(--bride-bg);border-color:var(--bride);}
+  .cat-both{background:var(--both-bg);border-color:var(--both);}
+  .cat-other{background:var(--other-bg);border-color:var(--other);}
+
+  .legend-row{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--ink-soft);align-items:center;}
+  .legend-row .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle;}
+  .legend-row .lg-icon{width:14px;height:14px;vertical-align:middle;margin-right:3px;}
+  .legend-row .lg-icon svg{width:100%;height:100%;display:block;}
+
+  .canvas-toolbar{position:sticky;top:0;left:0;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    padding:10px 16px;background:rgba(250,246,239,.94);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);}
+  .canvas-toolbar .spacer{flex:1;}
+  .table-count-badge{font-size:12.5px;color:var(--ink-soft);}
+  .zoom-controls{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px;}
+  .zoom-controls button{border:none;background:transparent;padding:4px 8px;font-size:14px;border-radius:5px;color:var(--ink);}
+  .zoom-controls button:hover{background:var(--gold-light);color:var(--gold);}
+  .zoom-label{font-size:12px;color:var(--ink-soft);width:40px;text-align:center;}
+
+  #canvasSizer{position:relative;}
+  #canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
+
+  .table{position:absolute;width:250px;user-select:none;}
+  .table-topbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px 2px;}
+  .table-no{display:inline-flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:11px;font-weight:600;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
+  .table-del{font-size:13px;color:#c9bdae;padding:2px 6px;border-radius:4px;}
+  .table-del:hover{color:var(--danger);background:#fff;}
+  .table-label-row{display:flex;justify-content:center;}
+  .table-label{display:inline-flex;align-items:center;gap:4px;font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);
+    background:#fff;border:1.5px dashed var(--gold);border-radius:14px;padding:2px 10px;cursor:pointer;}
+  .table-label:hover{background:var(--gold-light);border-style:solid;}
+  .table-label .pencil{font-size:10px;opacity:.55;}
+  .seat-row{display:flex;gap:6px;justify-content:center;overflow:visible;}
+  .seat-row.row-top{margin-top:18px;}
+  .table-surface{height:26px;margin:5px 8px;border-radius:4px;cursor:grab;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);box-shadow:inset 0 0 0 3px #fffdf9;position:relative;z-index:1;}
+  .table-surface:active{cursor:grabbing;}
+  .seat{width:74px;height:56px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px dashed #d8cdba;overflow:visible;position:relative;}
+  .seat.empty{color:#c3b8a4;font-size:16px;}
+  .seat.empty:hover{border-color:var(--gold);background:var(--gold-light);}
+  .seat.filled{padding:0;border-style:solid;overflow:visible;}
+  .seat-chip{width:100%;height:100%;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    border:1.5px solid var(--line);position:relative;cursor:grab;padding:4px 4px 5px;overflow:visible;z-index:2;}
+  .seat-chip.selected{box-shadow:0 0 0 2px var(--gold) inset;}
+  .seat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
+    background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
+  .seat-badge svg{width:17px;height:17px;display:block;}
+  .seat-name{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;line-height:1.2;}
+  .seat-remove{position:absolute;top:1px;right:2px;font-size:10px;color:#00000055;line-height:1;padding:2px;z-index:6;}
+  .seat-remove:hover{color:var(--danger);}
+
+  .empty-canvas-hint{position:absolute;top:120px;left:50%;transform:translateX(-50%);color:var(--ink-soft);text-align:center;font-size:14px;line-height:2;white-space:nowrap;}
+
+  pre.sql-box{white-space:pre-wrap;background:#fffefb;border:1px solid var(--line);padding:10px;border-radius:6px;font-size:10.8px;line-height:1.5;max-height:220px;overflow:auto;}
+  .sync-status{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;margin-top:4px;}
+  .dot-status{width:8px;height:8px;border-radius:50%;background:#c9bdae;flex:none;}
+  .dot-status.ok{background:var(--both);}
+  .dot-status.err{background:var(--danger);}
+  .dot-status.busy{background:var(--gold);}
+
+  .login-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--ivory);
+    background-image:radial-gradient(circle,#e4dac6 1px,transparent 1px);background-size:24px 24px;padding:20px;}
+  .login-box{width:100%;max-width:340px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:32px 28px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.06);}
+  .login-box input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px;margin-bottom:10px;text-align:left;}
+  .login-error{color:var(--danger);font-size:12.5px;margin-top:10px;min-height:16px;}
+
+  @media (max-width:900px){
+    .app-body{flex-direction:column;}
+    .sidebar{width:100%;height:auto;max-height:46vh;border-right:none;border-bottom:1px solid var(--line);}
+    .canvas-wrap{width:100%;height:54vh;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loginGate" class="login-gate">
+  <div class="login-box">
+    <h1 style="font-size:20px;letter-spacing:1px;">喜迎佳期 · 婚宴座位後台</h1>
+    <div class="rule" style="margin:10px auto 18px;"></div>
+    <p style="color:var(--ink-soft);font-size:13px;margin-bottom:16px;">請使用管理者帳號登入</p>
+    <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" />
+    <input id="loginPassword" type="password" placeholder="密碼" autocomplete="current-password" onkeydown="doLoginKeydown(event)" />
+    <button id="loginBtn" class="btn btn-primary btn-block" style="margin-top:10px;" onclick="doLogin()">登入</button>
+    <div id="loginError" class="login-error"></div>
+    <div class="hint" style="margin-top:14px;">帳號密碼由新人自己在 Supabase 後台的 Authentication 建立，不是這個網頁的公開功能。</div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+
+<div class="app-header">
+  <h1>喜迎佳期 · 婚宴座位編排</h1>
+  <div class="rule"></div>
+  <p>拖曳桌子安排位置，拖曳或點選賓客安排座位</p>
+  <button class="btn btn-sm" style="position:absolute;top:20px;right:24px;" onclick="doLogout()">登出</button>
+</div>
+
+
+<div class="app-body">
+
+  <div class="sidebar">
+
+    <div class="sec">
+      <div class="sec-title">新增賓客</div>
+      <div class="form-grid">
+        <input id="inpName" type="text" placeholder="姓名" />
+        <div class="row-2">
+          <select id="inpMeal">
+            <option value="">主餐</option>
+            <option value="牛肉">牛肉</option>
+            <option value="鴨肉">鴨肉</option>
+            <option value="兒童餐">兒童餐</option>
+            <option value="素食">素食</option>
+            <option value="嬰兒">嬰兒（無餐）</option>
+          </select>
+          <select id="inpCategory">
+            <option value="">歸屬</option>
+            <option value="男方親友">男方親友</option>
+            <option value="女方親友">女方親友</option>
+            <option value="共同好友">共同好友</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addGuestFromForm()">＋ 加入賓客</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">Excel / CSV 匯入</div>
+      <div class="row-2">
+        <button class="btn file-btn btn-block">選擇 CSV 檔案
+          <input type="file" id="csvInput" accept=".csv" />
+        </button>
+        <button class="btn btn-sm" onclick="downloadTemplate()">範例檔</button>
+      </div>
+      <div class="hint">請使用 UTF-8 CSV，欄位需含「姓名」「主餐」「歸屬」（順序不拘）。</div>
+    </div>
+
+    <div class="sec" id="syncSection">
+      <div class="sec-title">雲端同步（Supabase）</div>
+      <div id="syncManualFields" class="form-grid">
+        <input id="sbUrl" placeholder="Supabase Project URL" />
+        <input id="sbKey" placeholder="Supabase anon public key" />
+        <input id="sbCode" placeholder="活動代碼（自訂，跨裝置需輸入相同代碼）" />
+        <div class="row-2">
+          <button class="btn btn-primary btn-block" id="btnConnect" onclick="connectSupabase()">連接並同步</button>
+          <button class="btn btn-sm" onclick="disconnectSupabase()">中斷</button>
+        </div>
+      </div>
+      <div class="sync-status"><span class="dot-status" id="syncDot"></span><span id="syncStatus">尚未連接雲端同步</span></div>
+      <div class="hint">
+        <a href="#" onclick="toggleSqlHelp();return false;">查看資料庫建立教學</a>
+        ／
+        <a href="#" onclick="toggleDeployHelp();return false;">查看 GitHub Actions 部署教學</a>
+      </div>
+      <div id="sqlHelp" style="display:none;margin-top:6px;">
+<pre class="sql-box">-- 在 Supabase SQL Editor 執行一次即可
+create table wedding_seating_data (
+  event_code text primary key,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table wedding_seating_data enable row level security;
+
+-- 任何人（含未登入的賓客查詢頁）可以讀取
+create policy "public can read"
+  on wedding_seating_data for select
+  using (true);
+
+-- 只有登入帳號（新人自己）可以新增/修改/刪除
+create policy "authenticated can insert"
+  on wedding_seating_data for insert
+  with check (auth.role() = 'authenticated');
+create policy "authenticated can update"
+  on wedding_seating_data for update
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+create policy "authenticated can delete"
+  on wedding_seating_data for delete
+  using (auth.role() = 'authenticated');
+
+-- 接著到 Table Editor 找到這張表，
+-- 開啟右側 Realtime 開關，
+-- 即可讓多裝置即時同步。</pre>
+        <div class="hint">Project URL 與 anon key 可在 Supabase 專案的 Settings → API 找到。「活動代碼」是你自訂的代號（例如 wedding2026），所有裝置輸入相同代碼即可共用同一份資料。</div>
+        <div class="hint" style="margin-top:6px;">
+          <b>建立後台登入帳號</b>：到 Supabase 專案的 <b>Authentication → Users</b>，點 <b>Add user</b>，輸入 Email／密碼並直接標記為已驗證（Auto Confirm User），這組帳密就是這個後台頁面的登入帳號。建議到 <b>Authentication → Settings</b> 把「Allow new users to sign up」關閉，避免其他人自行註冊帳號。
+        </div>
+      </div>
+      <div id="deployHelp" style="display:none;margin-top:6px;">
+        <div class="hint">
+          這個 repo 裡的 <code>.github/workflows/deploy-pages.yml</code> 會在每次 push 到 main 時自動執行，用 GitHub repo 的 Secrets 產生 <code>config.js</code> 並部署到 GitHub Pages，網頁開啟後會自動讀取並連線，不需要手動輸入上面的欄位。設定步驟：<br>
+          1. repo 的 <b>Settings → Secrets and variables → Actions</b>，新增三個 Repository secrets：<code>SUPABASE_URL</code>、<code>SUPABASE_ANON_KEY</code>、<code>EVENT_CODE</code><br>
+          2. repo 的 <b>Settings → Pages</b>，Source 選「GitHub Actions」<br>
+          3. push 到 main 分支，到 repo 的 <b>Actions</b> 分頁即可看到執行紀錄；成功後 Pages 網址就會是你的線上版本（<code>index.html</code> 是賓客查詢首頁，<code>admin.html</code> 是需要登入的後台）<br>
+          本機測試可複製 <code>config.example.js</code> 為 <code>config.js</code> 並填入真實值（已加入 .gitignore，不會被提交）。
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">賓客名單統計</div>
+      <div class="stats-box" id="statsBox"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">待入座賓客（<span id="unassignedCount">0</span>）</div>
+      <input class="search-input" id="searchInput" placeholder="搜尋姓名..." oninput="onSearchInput(this.value)"/>
+      <div class="filter-row" id="filterRow"></div>
+      <div id="guestList" ondragover="event.preventDefault()" ondrop="onDropToUnassigned(event)"></div>
+      <div class="hint">點選一位賓客後，再點選桌上空位即可入座；也可直接拖曳賓客到座位。</div>
+    </div>
+
+    <div class="sec">
+      <button class="btn btn-gold btn-block" onclick="autoArrange()">⚡ 一鍵排入座位（依歸屬分組）</button>
+      <div class="hint" style="margin-top:6px;">會依「男方親友 → 女方親友 → 共同好友」順序，依序填入目前所有桌次，相同歸屬盡量安排在一起。</div>
+    </div>
+
+    <div class="sec">
+      <div class="row-2">
+        <button class="btn btn-sm btn-block" onclick="resetSeating()">清空所有座位</button>
+        <button class="btn btn-sm btn-block" onclick="exportSeatingCSV()">匯出座位表</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="canvas-toolbar">
+      <button class="btn btn-primary btn-sm" onclick="addTable()">＋ 新增桌子</button>
+      <span class="table-count-badge">共 <b id="tableCount">0</b> 桌（每桌 6 位）</span>
+      <div class="zoom-controls">
+        <button onclick="zoomOut()" title="縮小">－</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button onclick="zoomIn()" title="放大">＋</button>
+        <button onclick="zoomReset()" title="重置">重置</button>
+        <button onclick="zoomFit()" title="符合畫面">符合畫面</button>
+      </div>
+      <div class="spacer"></div>
+      <div class="legend-row" id="legendRow"></div>
+    </div>
+    <div id="canvasSizer">
+      <div id="canvas"></div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+/* ---------------- state ---------------- */
+let guests = [];
+let tables = [];
+let guestSeq = 1, tableSeq = 1;
+let selectedGuestId = null;
+let filterCategory = 'all';
+let searchTerm = '';
+let zoom = 1;
+
+let supabaseClient = null;
+let syncEventCode = null;
+let saveTimer = null;
+let isApplyingRemote = false;
+let realtimeChannel = null;
+const CFG = window.APP_CONFIG || {};
+
+/* ---------------- icons ---------------- */
+function mealColor(meal){
+  const map = {'牛肉':'#A8553F','鴨肉':'#C08A3E','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
+  return map[meal] || '#B0A695';
+}
+function mealIcon(meal){
+  const c = mealColor(meal);
+  const icons = {
+    '牛肉': `<svg viewBox="0 0 32 32"><path d="M16 5c-2 0-3 2-3 2s-3-3-6-1c-2 1-2 4 0 5 0 0-2 2-2 5 0 5 5 9 11 9s11-4 11-9c0-3-2-5-2-5 2-1 2-4 0-5-3-2-6 1-6 1s-1-2-3-2z" fill="${c}"/><ellipse cx="16" cy="21" rx="4" ry="3" fill="#fff" opacity="0.9"/><circle cx="14.3" cy="21" r="0.9" fill="${c}"/><circle cx="17.7" cy="21" r="0.9" fill="${c}"/><circle cx="11.3" cy="15" r="1.1" fill="#2b2b2b"/><circle cx="20.7" cy="15" r="1.1" fill="#2b2b2b"/></svg>`,
+    '鴨肉': `<svg viewBox="0 0 32 32"><ellipse cx="17" cy="14" rx="8" ry="7" fill="${c}"/><path d="M9 15c-3 0-6 1-6 3s3 2 6 1z" fill="${c}"/><circle cx="19.5" cy="11.5" r="1.2" fill="#2b2b2b"/></svg>`,
+    '兒童餐': `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="${c}"/><circle cx="11.5" cy="14" r="1.6" fill="#fff"/><circle cx="20.5" cy="14" r="1.6" fill="#fff"/><path d="M10 20c2 3 10 3 12 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+    '素食': `<svg viewBox="0 0 32 32"><path d="M6 27C5 14 17 6 27 6c1 10-3 22-19 22-1.3 0-1.7-0.3-2-1z" fill="${c}"/><path d="M9 24C13 16 18 12 24 9" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/></svg>`,
+    '嬰兒': `<svg viewBox="0 0 32 32"><rect x="12" y="10" width="8" height="14" rx="3" fill="${c}"/><rect x="13" y="4.5" width="6" height="6.5" rx="2" fill="${c}" opacity="0.55"/><rect x="14" y="2" width="4" height="3" rx="1.5" fill="${c}"/></svg>`
+  };
+  return icons[meal] || `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" fill="none" stroke="${c}" stroke-width="2.5"/><text x="16" y="21" font-size="14" text-anchor="middle" fill="${c}" font-family="sans-serif">?</text></svg>`;
+}
+
+/* ---------------- helpers ---------------- */
+function escapeHTML(s){
+  return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function categoryClass(cat){
+  if(cat==='男方親友') return 'cat-groom';
+  if(cat==='女方親友') return 'cat-bride';
+  if(cat==='共同好友') return 'cat-both';
+  return 'cat-other';
+}
+function getGuestAtSeat(tableId, seatIndex){ return guests.find(g=>g.tableId===tableId && g.seatIndex===seatIndex); }
+function getGuest(id){ return guests.find(g=>g.id===id); }
+function recalcSeq(){
+  guestSeq = guests.reduce((m,g)=>Math.max(m, parseInt((g.id||'g0').slice(1))||0), 0)+1;
+  tableSeq = tables.reduce((m,t)=>Math.max(m, t.no||0), 0)+1;
+}
+
+/* ---------------- guest CRUD ---------------- */
+function addGuestFromForm(){
+  const name = document.getElementById('inpName').value.trim();
+  const meal = document.getElementById('inpMeal').value;
+  const category = document.getElementById('inpCategory').value;
+  if(!name){ alert('請輸入姓名'); return; }
+  guests.push({id:'g'+(guestSeq++), name, meal, category, tableId:null, seatIndex:null});
+  document.getElementById('inpName').value='';
+  document.getElementById('inpName').focus();
+  render();
+}
+document.getElementById('inpName').addEventListener('keydown', e=>{ if(e.key==='Enter') addGuestFromForm(); });
+
+function onChipDelete(e, id){
+  e.stopPropagation();
+  if(confirm('確定要刪除這位賓客嗎？此動作無法復原。')){
+    guests = guests.filter(g=>g.id!==id);
+    if(selectedGuestId===id) selectedGuestId=null;
+    render();
+  }
+}
+function onChipRemove(e, id){
+  e.stopPropagation();
+  const g = getGuest(id);
+  if(g){ g.tableId=null; g.seatIndex=null; }
+  if(selectedGuestId===id) selectedGuestId=null;
+  render();
+}
+function onChipClick(id){ selectedGuestId = (selectedGuestId===id) ? null : id; render(); }
+function onChipDragStart(e, id){ e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed='move'; }
+
+/* ---------------- seat assignment ---------------- */
+function assign(guestId, tableId, seatIndex){
+  const g = getGuest(guestId);
+  if(!g) return;
+  const occupant = getGuestAtSeat(tableId, seatIndex);
+  const oldTableId = g.tableId, oldSeatIndex = g.seatIndex;
+  if(occupant && occupant.id !== guestId){
+    occupant.tableId = (oldTableId!=null) ? oldTableId : null;
+    occupant.seatIndex = (oldTableId!=null) ? oldSeatIndex : null;
+  }
+  g.tableId = tableId; g.seatIndex = seatIndex;
+}
+function onSeatClick(tableId, seatIndex){
+  if(selectedGuestId){ assign(selectedGuestId, tableId, seatIndex); selectedGuestId=null; render(); }
+}
+function onSeatDrop(e, tableId, seatIndex){
+  e.preventDefault();
+  const id = e.dataTransfer.getData('text/plain');
+  if(id){ assign(id, tableId, seatIndex); selectedGuestId=null; render(); }
+}
+function onDropToUnassigned(e){
+  e.preventDefault();
+  const id = e.dataTransfer.getData('text/plain');
+  if(id){ const g=getGuest(id); if(g){ g.tableId=null; g.seatIndex=null; } selectedGuestId=null; render(); }
+}
+
+/* ---------------- tables ---------------- */
+function addTable(){
+  const idx = tables.length;
+  const x = 40 + (idx % 4) * 280;
+  const y = 40 + Math.floor(idx/4) * 200;
+  tables.push({id:'t'+tableSeq, no:tableSeq, x, y, topName: tableSeq+'A', bottomName: tableSeq+'B'});
+  tableSeq++;
+  render();
+}
+function renameTableLabel(tableId, half){
+  const t = tables.find(x=>x.id===tableId);
+  if(!t) return;
+  const current = half==='top' ? (t.topName||'') : (t.bottomName||'');
+  const val = prompt('請輸入'+(half==='top'?'上排（3個位置）':'下排（3個位置）')+'的名稱：', current);
+  if(val===null) return;
+  const trimmed = val.trim() || (half==='top' ? t.no+'A' : t.no+'B');
+  if(half==='top') t.topName = trimmed; else t.bottomName = trimmed;
+  render();
+}
+function onDeleteTable(tableId){
+  if(!confirm('確定要刪除這張桌子嗎？桌上賓客會回到待入座名單。')) return;
+  guests.forEach(g=>{ if(g.tableId===tableId){ g.tableId=null; g.seatIndex=null; } });
+  tables = tables.filter(t=>t.id!==tableId);
+  render();
+}
+
+/* ---- table drag (pointer events, zoom-aware) ---- */
+let dragState = null;
+function onTablePointerDown(e, tableId){
+  e.preventDefault();
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const t = tables.find(x=>x.id===tableId);
+  dragState = { tableId, offsetX: (e.clientX-rect.left)/zoom - t.x, offsetY: (e.clientY-rect.top)/zoom - t.y };
+  document.addEventListener('pointermove', onTablePointerMove);
+  document.addEventListener('pointerup', onTablePointerUp);
+}
+function onTablePointerMove(e){
+  if(!dragState) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const t = tables.find(x=>x.id===dragState.tableId);
+  let nx = (e.clientX-rect.left)/zoom - dragState.offsetX;
+  let ny = (e.clientY-rect.top)/zoom - dragState.offsetY;
+  nx = Math.max(0, nx); ny = Math.max(0, ny);
+  t.x = nx; t.y = ny;
+  const el = document.getElementById('table-'+t.id);
+  if(el){ el.style.left = nx+'px'; el.style.top = ny+'px'; }
+  updateCanvasFrame();
+}
+function onTablePointerUp(){
+  if(!dragState) return;
+  const t = tables.find(x=>x.id===dragState.tableId);
+  if(t){
+    t.x = Math.round(t.x/10)*10; t.y = Math.round(t.y/10)*10;
+    const el = document.getElementById('table-'+t.id);
+    if(el){ el.style.left=t.x+'px'; el.style.top=t.y+'px'; }
+  }
+  dragState = null;
+  document.removeEventListener('pointermove', onTablePointerMove);
+  document.removeEventListener('pointerup', onTablePointerUp);
+  updateCanvasFrame();
+  scheduleSave();
+}
+
+/* ---- zoom / canvas sizing ---- */
+function getCanvasLogicalSize(){
+  let maxX=1200, maxY=800;
+  tables.forEach(t=>{ maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280); });
+  return {w:maxX, h:maxY};
+}
+function updateCanvasFrame(){
+  const size = getCanvasLogicalSize();
+  const sizer = document.getElementById('canvasSizer');
+  const canvas = document.getElementById('canvas');
+  sizer.style.width = (size.w*zoom)+'px';
+  sizer.style.height = (size.h*zoom)+'px';
+  canvas.style.width = size.w+'px';
+  canvas.style.height = size.h+'px';
+  canvas.style.transform = 'scale('+zoom+')';
+  document.getElementById('zoomLabel').textContent = Math.round(zoom*100)+'%';
+}
+function setZoom(z){ zoom = Math.min(1.6, Math.max(0.3, Math.round(z*100)/100)); updateCanvasFrame(); }
+function zoomIn(){ setZoom(zoom+0.1); }
+function zoomOut(){ setZoom(zoom-0.1); }
+function zoomReset(){ setZoom(1); }
+function zoomFit(){
+  const wrap = document.getElementById('canvasWrap');
+  if(tables.length===0){ setZoom(1); return; }
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  tables.forEach(t=>{ minX=Math.min(minX,t.x); minY=Math.min(minY,t.y); maxX=Math.max(maxX,t.x+250); maxY=Math.max(maxY,t.y+210); });
+  const availW = wrap.clientWidth - 60, availH = wrap.clientHeight - 60;
+  const contentW = Math.max(1,maxX-minX), contentH = Math.max(1,maxY-minY);
+  let z = Math.min(availW/contentW, availH/contentH, 1.4);
+  setZoom(Math.max(0.3, z));
+  requestAnimationFrame(()=>{ wrap.scrollLeft = Math.max(0,minX*zoom-30); wrap.scrollTop = Math.max(0,minY*zoom-30); });
+}
+
+/* ---------------- auto arrange ---------------- */
+function autoArrange(){
+  if(tables.length===0){ alert('請先新增至少一張桌子'); return; }
+  if(guests.length===0){ alert('目前尚無賓客名單'); return; }
+  const order = {'男方親友':0, '女方親友':1, '共同好友':2};
+  const sorted = guests.slice().sort((a,b)=> (order[a.category]??99) - (order[b.category]??99));
+  guests.forEach(g=>{ g.tableId=null; g.seatIndex=null; });
+  const sortedTables = tables.slice().sort((a,b)=> (a.y-b.y) || (a.x-b.x));
+  let ti=0, si=0;
+  for(const g of sorted){
+    if(ti>=sortedTables.length) break;
+    g.tableId = sortedTables[ti].id; g.seatIndex = si; si++;
+    if(si>=6){ si=0; ti++; }
+  }
+  render();
+  const seated = guests.filter(g=>g.tableId!=null).length;
+  if(seated < guests.length) alert('座位不足！還有 ' + (guests.length-seated) + ' 位賓客未能安排座位，請新增桌子後再排一次。');
+}
+function resetSeating(){
+  if(!confirm('確定要清空所有座位安排嗎？（賓客名單不會被刪除）')) return;
+  guests.forEach(g=>{ g.tableId=null; g.seatIndex=null; });
+  render();
+}
+
+/* ---------------- CSV import / export ---------------- */
+document.getElementById('csvInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  Papa.parse(file, {
+    header:true, skipEmptyLines:true, encoding:'UTF-8',
+    complete:function(results){
+      let added=0;
+      (results.data||[]).forEach(row=>{
+        const keys=Object.keys(row);
+        const nameKey=keys.find(k=>/姓名|name/i.test(k));
+        const mealKey=keys.find(k=>/主餐|meal/i.test(k));
+        const catKey=keys.find(k=>/歸屬|category|side/i.test(k));
+        const name=nameKey?(row[nameKey]||'').trim():'';
+        if(!name) return;
+        const meal=mealKey?(row[mealKey]||'').trim():'';
+        const category=catKey?(row[catKey]||'').trim():'';
+        guests.push({id:'g'+(guestSeq++), name, meal, category, tableId:null, seatIndex:null});
+        added++;
+      });
+      render();
+      alert('成功匯入 '+added+' 位賓客！');
+      e.target.value='';
+    },
+    error:function(){ alert('CSV 讀取失敗，請確認檔案為 UTF-8 編碼的 CSV 格式。'); e.target.value=''; }
+  });
+});
+function downloadTemplate(){
+  const csv = '姓名,主餐,歸屬\n王小明,牛肉,男方親友\n陳小華,鴨肉,女方親友\n林小同,素食,共同好友\n';
+  triggerDownload('賓客名單範例.csv', '\uFEFF'+csv);
+}
+function exportSeatingCSV(){
+  const rows=[['桌次','區域名稱','座位','姓名','主餐','歸屬']];
+  const sortedTables = tables.slice().sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  sortedTables.forEach(t=>{
+    for(let i=0;i<6;i++){
+      const g=getGuestAtSeat(t.id,i);
+      if(g){
+        const label = i<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'));
+        const seatNum = (i%3)+1;
+        rows.push(['#'+t.no, label, seatNum, g.name, g.meal||'', g.category||'']);
+      }
+    }
+  });
+  guests.filter(g=>g.tableId==null).forEach(g=>rows.push(['未安排','','',g.name,g.meal||'',g.category||'']));
+  const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  triggerDownload('婚宴座位表.csv', '\uFEFF'+csv);
+}
+function triggerDownload(filename, content){
+  const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- search / filter ---------------- */
+function onSearchInput(v){ searchTerm=v.trim(); renderGuestList(); }
+function setFilter(cat){ filterCategory=cat; render(); }
+function toggleSqlHelp(){ const el=document.getElementById('sqlHelp'); el.style.display = el.style.display==='none' ? 'block' : 'none'; }
+function toggleDeployHelp(){ const el=document.getElementById('deployHelp'); el.style.display = el.style.display==='none' ? 'block' : 'none'; }
+
+/* ---------------- Supabase sync ---------------- */
+function setSyncStatus(msg, state){
+  document.getElementById('syncStatus').textContent = msg;
+  const dot = document.getElementById('syncDot');
+  dot.className = 'dot-status' + (state ? ' '+state : '');
+}
+function nowStr(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
+
+async function connectSupabase(){
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const code = document.getElementById('sbCode').value.trim();
+  if(!url || !key || !code){ alert('請填寫完整的 Project URL、anon key 與活動代碼'); return; }
+  try{
+    setSyncStatus('連接中...', 'busy');
+    const client = supabase.createClient(url, key);
+    const { data, error } = await client.from('wedding_seating_data').select('data').eq('event_code', code).maybeSingle();
+    if(error) throw error;
+    supabaseClient = client;
+    syncEventCode = code;
+    if(data && data.data && (data.data.guests || data.data.tables)){
+      isApplyingRemote = true;
+      guests = data.data.guests || [];
+      tables = data.data.tables || [];
+      recalcSeq();
+      render();
+      isApplyingRemote = false;
+      setSyncStatus('已載入雲端資料 · '+nowStr(), 'ok');
+    } else {
+      setSyncStatus('已連接，尚無雲端資料，正在建立...', 'busy');
+      await saveToCloud();
+    }
+    subscribeRealtime();
+    try{ await window.storage.set('supabase-config', JSON.stringify({url,key,code})); }catch(err){}
+  }catch(err){
+    console.error(err);
+    setSyncStatus('連接失敗：'+(err.message||err), 'err');
+    supabaseClient = null;
+  }
+}
+function disconnectSupabase(){
+  if(realtimeChannel && supabaseClient){ try{ supabaseClient.removeChannel(realtimeChannel); }catch(e){} }
+  realtimeChannel=null; supabaseClient=null; syncEventCode=null;
+  setSyncStatus('已中斷雲端同步');
+}
+function scheduleSave(){
+  if(!supabaseClient || isApplyingRemote) return;
+  clearTimeout(saveTimer);
+  setSyncStatus('編輯中，即將同步...', 'busy');
+  saveTimer = setTimeout(saveToCloud, 900);
+}
+async function saveToCloud(){
+  if(!supabaseClient) return;
+  try{
+    setSyncStatus('同步中...', 'busy');
+    const { error } = await supabaseClient.from('wedding_seating_data').upsert({
+      event_code: syncEventCode, data:{ guests, tables }, updated_at: new Date().toISOString()
+    });
+    if(error) throw error;
+    setSyncStatus('已同步 · '+nowStr(), 'ok');
+  }catch(err){
+    console.error(err);
+    setSyncStatus('同步失敗：'+(err.message||err), 'err');
+  }
+}
+function subscribeRealtime(){
+  if(!supabaseClient) return;
+  realtimeChannel = supabaseClient.channel('wedding-sync-'+syncEventCode)
+    .on('postgres_changes', {event:'*', schema:'public', table:'wedding_seating_data', filter:'event_code=eq.'+syncEventCode}, payload=>{
+      if(payload.new && payload.new.data){
+        isApplyingRemote = true;
+        guests = payload.new.data.guests || [];
+        tables = payload.new.data.tables || [];
+        recalcSeq();
+        render();
+        isApplyingRemote = false;
+        setSyncStatus('已從其他裝置同步 · '+nowStr(), 'ok');
+      }
+    }).subscribe();
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  renderStats();
+  renderFilterRow();
+  renderGuestList();
+  renderTables();
+  renderLegend();
+  scheduleSave();
+}
+function renderLegend(){
+  const cats = [['男方親友','groom'],['女方親友','bride'],['共同好友','both']];
+  let html = cats.map(c=>'<span><span class="sw" style="background:var(--'+c[1]+')"></span>'+c[0]+'</span>').join('');
+  const meals = ['牛肉','鴨肉','兒童餐','素食','嬰兒'];
+  html += meals.map(m=>'<span><span class="lg-icon" style="display:inline-flex;">'+mealIcon(m)+'</span>'+m+'</span>').join('');
+  document.getElementById('legendRow').innerHTML = html;
+}
+function renderStats(){
+  const total = guests.length;
+  const seated = guests.filter(g=>g.tableId!=null).length;
+  const capacity = tables.length*6;
+  const meals = {'牛肉':0,'鴨肉':0,'兒童餐':0,'素食':0,'嬰兒':0,'未填':0};
+  guests.forEach(g=>{ meals[g.meal && meals.hasOwnProperty(g.meal) ? g.meal : '未填']++; });
+  let html='';
+  html += '<div class="stat-line"><span class="stat-label">賓客總數</span><b>'+total+' 位</b></div>';
+  html += '<div class="stat-line"><span class="stat-label">已安排座位</span><b>'+seated+' 位</b></div>';
+  html += '<div class="stat-line"><span class="stat-label">桌位容量</span><b>'+capacity+' 位（'+tables.length+' 桌）</b></div>';
+  if(capacity < total) html += '<div class="stat-line warn">⚠ 桌位不足，尚缺 '+(total-capacity)+' 位座位</div>';
+  html += '<div style="margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;">';
+  Object.keys(meals).forEach(m=>{
+    if(meals[m]>0){
+      const icon = m==='未填' ? '' : mealIcon(m);
+      html += '<div class="stat-line"><span class="stat-label">'+icon+m+'</span><b>'+meals[m]+'</b></div>';
+    }
+  });
+  html += '</div>';
+  document.getElementById('statsBox').innerHTML = html;
+}
+function renderFilterRow(){
+  const cats=['all','男方親友','女方親友','共同好友'];
+  const labels={'all':'全部','男方親友':'男方親友','女方親友':'女方親友','共同好友':'共同好友'};
+  document.getElementById('filterRow').innerHTML = cats.map(c=>
+    '<button class="chip-filter '+(filterCategory===c?'active':'')+'" onclick="setFilter(\''+c+'\')">'+labels[c]+'</button>'
+  ).join('');
+}
+function guestChipHTML(g){
+  const sel = selectedGuestId===g.id ? 'selected' : '';
+  return '<div class="chip '+categoryClass(g.category)+' '+sel+'" draggable="true" '+
+    'onclick="onChipClick(\''+g.id+'\')" ondragstart="onChipDragStart(event,\''+g.id+'\')">'+
+    '<span class="chip-icon">'+mealIcon(g.meal)+'</span>'+
+    '<span class="chip-name">'+escapeHTML(g.name)+'</span>'+
+    '<span class="chip-meal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
+    '<span class="chip-del" onclick="onChipDelete(event,\''+g.id+'\')" title="刪除賓客">🗑</span>'+
+  '</div>';
+}
+function seatChipHTML(g){
+  const sel = selectedGuestId===g.id ? 'selected' : '';
+  const c = mealColor(g.meal);
+  return '<div class="seat-chip '+categoryClass(g.category)+' '+sel+'" draggable="true" '+
+    'ondragstart="onChipDragStart(event,\''+g.id+'\')" onclick="event.stopPropagation(); onChipClick(\''+g.id+'\')">'+
+    '<div class="seat-badge" style="border-color:'+c+'">'+mealIcon(g.meal)+'</div>'+
+    '<span class="seat-name">'+escapeHTML(g.name)+'</span>'+
+    '<span class="seat-remove" onclick="onChipRemove(event,\''+g.id+'\')">✕</span>'+
+  '</div>';
+}
+function renderGuestList(){
+  const container = document.getElementById('guestList');
+  const unassigned = guests.filter(g=>g.tableId==null);
+  const filtered = unassigned.filter(g=> (filterCategory==='all'||g.category===filterCategory) && (!searchTerm || g.name.includes(searchTerm)) );
+  container.innerHTML = filtered.length ? filtered.map(guestChipHTML).join('') : '<div class="empty-hint">目前沒有待入座的賓客</div>';
+  document.getElementById('unassignedCount').textContent = unassigned.length;
+}
+function seatCellHTML(t,i){
+  const occ = getGuestAtSeat(t.id,i);
+  if(occ) return '<div class="seat filled" ondragover="event.preventDefault()" ondrop="onSeatDrop(event,\''+t.id+'\','+i+')">'+seatChipHTML(occ)+'</div>';
+  return '<div class="seat empty" onclick="onSeatClick(\''+t.id+'\','+i+')" ondragover="event.preventDefault()" ondrop="onSeatDrop(event,\''+t.id+'\','+i+')"><span>＋</span></div>';
+}
+function tableHTML(t){
+  const top=[0,1,2].map(i=>seatCellHTML(t,i)).join('');
+  const bottom=[3,4,5].map(i=>seatCellHTML(t,i)).join('');
+  return '<div class="table" id="table-'+t.id+'" style="left:'+t.x+'px; top:'+t.y+'px;">'+
+    '<div class="table-topbar"><span class="table-no">#'+t.no+'</span>'+
+    '<span class="table-del" onclick="onDeleteTable(\''+t.id+'\')" title="刪除桌子">✕</span></div>'+
+    '<div class="table-label-row"><span class="table-label" onclick="renameTableLabel(\''+t.id+'\',\'top\')" title="點選重新命名">'+
+      escapeHTML(t.topName||(t.no+'A'))+'<span class="pencil">✎</span></span></div>'+
+    '<div class="seat-row row-top">'+top+'</div>'+
+    '<div class="table-surface" onpointerdown="onTablePointerDown(event,\''+t.id+'\')"></div>'+
+    '<div class="seat-row">'+bottom+'</div>'+
+    '<div class="table-label-row" style="margin-top:10px;"><span class="table-label" onclick="renameTableLabel(\''+t.id+'\',\'bottom\')" title="點選重新命名">'+
+      escapeHTML(t.bottomName||(t.no+'B'))+'<span class="pencil">✎</span></span></div>'+
+  '</div>';
+}
+function renderTables(){
+  const canvas = document.getElementById('canvas');
+  canvas.innerHTML = tables.map(tableHTML).join('') +
+    (tables.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '');
+  document.getElementById('tableCount').textContent = tables.length;
+  updateCanvasFrame();
+}
+
+/* ---------------- auth ---------------- */
+let authClient = (CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) ? supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
+
+function showLoginError(msg){ document.getElementById('loginError').textContent = msg; }
+
+async function doLogin(){
+  showLoginError('');
+  if(!authClient){ showLoginError('尚未設定 Supabase 連線資訊（缺少 config.js）'); return; }
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  if(!email || !pw){ showLoginError('請輸入帳號與密碼'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = '登入中...';
+  const { error } = await authClient.auth.signInWithPassword({ email, password: pw });
+  btn.disabled = false; btn.textContent = '登入';
+  if(error){ showLoginError('登入失敗：帳號或密碼錯誤'); return; }
+  onLoginSuccess();
+}
+function doLoginKeydown(e){ if(e.key==='Enter') doLogin(); }
+
+async function doLogout(){
+  if(authClient){ try{ await authClient.auth.signOut(); }catch(e){} }
+  location.reload();
+}
+
+async function onLoginSuccess(){
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+  addTable();
+  addTable();
+  render();
+  await startCloudSync();
+}
+
+async function startCloudSync(){
+  if(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && CFG.EVENT_CODE){
+    document.getElementById('sbUrl').value = CFG.SUPABASE_URL;
+    document.getElementById('sbKey').value = CFG.SUPABASE_ANON_KEY;
+    document.getElementById('sbCode').value = CFG.EVENT_CODE;
+    document.getElementById('sbUrl').readOnly = true;
+    document.getElementById('sbKey').readOnly = true;
+    document.getElementById('sbCode').readOnly = true;
+    document.getElementById('btnConnect').style.display = 'none';
+    syncEventCode = CFG.EVENT_CODE;
+    supabaseClient = authClient;
+    setSyncStatus('已登入，載入雲端資料中...', 'busy');
+    try{
+      const { data, error } = await supabaseClient.from('wedding_seating_data').select('data').eq('event_code', syncEventCode).maybeSingle();
+      if(error) throw error;
+      if(data && data.data && (data.data.guests || data.data.tables)){
+        isApplyingRemote = true;
+        guests = data.data.guests || [];
+        tables = data.data.tables || [];
+        recalcSeq();
+        render();
+        isApplyingRemote = false;
+        setSyncStatus('已載入雲端資料 · '+nowStr(), 'ok');
+      } else {
+        setSyncStatus('已連接，尚無雲端資料，正在建立...', 'busy');
+        await saveToCloud();
+      }
+      subscribeRealtime();
+    }catch(err){
+      console.error(err);
+      setSyncStatus('讀取失敗：'+(err.message||err), 'err');
+    }
+  } else {
+    setSyncStatus('未偵測到 config.js，可於下方手動輸入連線設定');
+  }
+}
+
+async function checkExistingSession(){
+  if(!authClient) return false;
+  try{
+    const { data } = await authClient.auth.getSession();
+    if(data && data.session){ await onLoginSuccess(); return true; }
+  }catch(err){}
+  return false;
+}
+
+/* ---------------- init ---------------- */
+checkExistingSession();
+</script>
+</body>
+</html>
