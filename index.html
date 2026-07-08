@@ -23,15 +23,15 @@
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
 
   .header{padding:22px 20px 14px;text-align:center;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);}
-  .header h1{font-size:20px;letter-spacing:1.5px;}
+  .header h1{font-size:22px;letter-spacing:1.5px;}
   .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-  .header p{margin:0;font-size:12.5px;color:var(--ink-soft);letter-spacing:.5px;}
+  .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
 
   .search-area{padding:16px 18px;position:relative;}
   .search-box{position:relative;}
-  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
+  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-align:center;}
   .search-input:focus{outline:none;border-color:var(--gold);}
-  .search-hint{font-size:18px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
+  .search-hint{font-size:16px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
 
   .suggest-list{position:absolute;left:18px;right:18px;top:56px;background:#fff;border:1px solid var(--line);
     border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
@@ -101,6 +101,7 @@
       <div class="suggest-list" id="suggestList" style="display:none;"></div>
     </div>
     <div class="search-hint">輸入任一個字即可搜尋，同行賓客會一起顯示</div>
+    <div class="search-hint">到達座位後，桌上會有您的姓名卡</div>
   </div>
 
   <div class="stage-section">
