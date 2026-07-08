@@ -76,7 +76,7 @@
   .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:8px;}
   .result-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--line);}
   .result-row:first-of-type{border-top:none;}
-  .result-row .ricon{width:20px;height:20px;flex:none;}
+  .result-row .ricon{width:25px;height:25px;flex:none;}
   .result-row .rname{font-weight:700;flex:1;font-size:18px;}
   .result-row .rmeal{font-size:18px;color:var(--ink-soft);}
   .result-row .rloc{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
@@ -289,8 +289,8 @@ function runSearch(baseName){
     const t = seated ? tables.find(x=>x.id===g.tableId) : null;
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
-      '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
       '<span class="rname">'+escapeHTML(g.name)+'</span>'+
+      '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
     '</div>';
