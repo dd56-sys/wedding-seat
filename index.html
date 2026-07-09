@@ -37,7 +37,7 @@
 
   .suggest-list{position:absolute;left:18px;right:18px;top:56px;background:#fff;border:1px solid var(--line);
     border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
-  .suggest-item{padding:12px 16px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line);}
+  .suggest-item{padding:12px 16px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line);text-align: center;}
   .suggest-item:last-child{border-bottom:none;}
   .suggest-item:active{background:var(--gold-light);}
   .suggest-empty{padding:14px 16px;font-size:13px;color:var(--ink-soft);text-align:center;}
@@ -429,8 +429,8 @@ function runSearch(baseName){
     const t = seated ? tables.find(x=>x.id===g.tableId) : null;
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
+      '<span class="rname">'+escapeHTML(g.name)+'</span>'+    
       '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
-      '<span class="rname">'+escapeHTML(g.name)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
     '</div>';
