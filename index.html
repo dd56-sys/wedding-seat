@@ -75,7 +75,7 @@
     z-index:6;*/
     border: 2.5px solid transparent;
     padding: 2px 19px;
-    font-size: 18px;
+    font-size: 19px;
     color: #ff6a00eb;
     background:
         linear-gradient(#fff, #fff) padding-box, 
@@ -84,7 +84,7 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    animation: textPopUpTop 1.3s 1s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 5.2s linear infinite;
+    animation: textPopUpTop 1.3s 1s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;
     z-index: 6;
     margin: -5px;
   }
@@ -299,7 +299,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 2.25s cubic-bezier(.2,.8,.2,1)' : 'none';
+  world.style.transition = animate ? 'transform 5.25s cubic-bezier(.2,.8,.2,1)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
