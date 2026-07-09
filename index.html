@@ -56,22 +56,22 @@
   .plandmark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
   .plandmark-label{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:700;
     background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);}
-  .ptable-topbar{display:flex;justify-content:center;padding-bottom:2px;}
+  .ptable-topbar{display:none;justify-content:center;padding-bottom:2px;}
   .ptable-no{font-family:'Noto Serif TC',serif;font-size:11px;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .plabel-row{display:flex;justify-content:center;overflow:visible;}
   .plabel{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);background:#fff;
     border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;position:relative;}
   .plabel.matched{
     border:2.5px solid transparent;
-    padding:3px 13px;
+    padding:5px 16px;
     font-size:14.5px;
-    color:var(--ink);
+    color:#ff6a00eb;
     background:
-      linear-gradient(#fff,#fff) padding-box,
-      linear-gradient(90deg,#B8935A,#C4453B,#3F8F5C,#2E6DA4,#B8935A) border-box;
+    linear-gradient(#fff, #fff) padding-box, linear-gradient(
+    90deg, #ffffff, #ff6a00, #ffffff, #ff6a00, #ffffff) border-box
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 3px 12px rgba(184,147,90,.4);
-    animation: textPopUpTop .65s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
+    animation: textPopUpTop 1.8s cubic-bezier(.34,1.56,.64,1.2) both, plabelBorderFlow 5.2s linear infinite;
     z-index:6;
   }
   @keyframes plabelBorderFlow{
