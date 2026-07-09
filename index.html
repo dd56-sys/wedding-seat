@@ -62,7 +62,7 @@
   .plabel{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);background:#fff;
     border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;position:relative;}
   .plabel.matched{
-    border:2.5px solid transparent;
+    /*border:2.5px solid transparent;
     padding:5px 16px;
     font-size:14.5px;
     color:#ff6a00eb;
@@ -72,11 +72,25 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 3px 12px rgba(184,147,90,.4);
     animation: textPopUpTop 1.8s cubic-bezier(.34,1.56,.64,1.2) both, plabelBorderFlow 5.2s linear infinite;
-    z-index:6;
+    z-index:6;*/
+    border: 2.5px solid transparent;
+    padding: 5px 16px;
+    font-size: 14.5px;
+    color: #ff6a00eb;
+    background:
+        linear-gradient(#fff, #fff) padding-box, 
+        /* 把 90deg 改成 180deg (由上到下) */
+        linear-gradient(180deg, #ffffff, #ff6a00, #ffffff, #ff6a00, #ffffff) border-box; 
+    /* 把 300% 100% 改成 100% 300% (高度變3倍長) */
+    background-size: 100% 100%, 100% 300%; 
+    box-shadow: 0 3px 12px rgba(184,147,90,.4);
+    animation: textPopUpTop 1.8s 1s cubic-bezier(.34,1.56,.64,1.2) both, plabelBorderFlow 5.2s linear infinite;
+    z-index: 6;
+    margin: -5px;
   }
   @keyframes plabelBorderFlow{
     0%{ background-position: 0 0, 0% 0; }
-    100%{ background-position: 0 0, 300% 0; }
+    100%{ background-position: 0 0, 0 100%; }
   }
   @keyframes textPopUpTop{
     0%{ opacity:0; transform: translateY(18px) scale(.55); }
@@ -85,7 +99,7 @@
     100%{ opacity:1; transform: translateY(0) scale(1); }
   }
   .prow{display:flex;gap:6px;justify-content:center;overflow:visible;}
-  .prow.top{margin-top:18px;}
+  .prow.top{margin-top:25px;}
   .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
   .pseat{width:74px;height:56px;border-radius:6px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
   .pseat.filled{background:#EFE9DC;}
