@@ -108,7 +108,20 @@
   #canvasSizer{position:relative;}
   #canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
 
-  .table{position:absolute;width:250px;user-select:none;}
+  .table{position:absolute;width:250px;user-select:none;z-index:2;}
+
+  .landmark{position:absolute;z-index:1;user-select:none;}
+  .landmark img{width:100%;height:100%;object-fit:contain;cursor:grab;-webkit-user-drag:none;display:block;
+    filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
+  .landmark img:active{cursor:grabbing;}
+  .landmark-del{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:#fff;
+    border:1px solid var(--line);font-size:10px;display:flex;align-items:center;justify-content:center;color:#c9bdae;cursor:pointer;}
+  .landmark-del:hover{color:var(--danger);}
+  .landmark-resize{position:absolute;bottom:-6px;right:-6px;width:16px;height:16px;background:#fff;border:1px solid var(--line);
+    border-radius:3px;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:nwse-resize;color:var(--ink-soft);}
+  .landmark-label{position:absolute;left:50%;bottom:-22px;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;
+    background:#fff;border:1.5px dashed var(--gold);border-radius:10px;padding:1px 8px;cursor:pointer;}
+  .landmark-label:hover{background:var(--gold-light);border-style:solid;}
   .table-topbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px 2px;}
   .table-no{display:inline-flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:11px;font-weight:600;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .table-del{font-size:13px;color:#c9bdae;padding:2px 6px;border-radius:4px;}
@@ -137,6 +150,7 @@
   .seat-remove{position:absolute;top:1px;right:2px;font-size:10px;color:#00000055;line-height:1;padding:2px;z-index:6;}
   .seat-remove:hover{color:var(--danger);}
   #syncSection {display: none;}
+
   .empty-canvas-hint{position:absolute;top:120px;left:50%;transform:translateX(-50%);color:var(--ink-soft);text-align:center;font-size:14px;line-height:2;white-space:nowrap;}
 
   pre.sql-box{white-space:pre-wrap;background:#fffefb;border:1px solid var(--line);padding:10px;border-radius:6px;font-size:10.8px;line-height:1.5;max-height:220px;overflow:auto;}
@@ -273,6 +287,20 @@ create policy "authenticated can delete"
         <div class="hint" style="margin-top:6px;">
           <b>建立後台登入帳號</b>：到 Supabase 專案的 <b>Authentication → Users</b>，點 <b>Add user</b>，輸入 Email／密碼並直接標記為已驗證（Auto Confirm User），這組帳密就是這個後台頁面的登入帳號。建議到 <b>Authentication → Settings</b> 把「Allow new users to sign up」關閉，避免其他人自行註冊帳號。
         </div>
+        <div class="hint" style="margin-top:6px;">
+          <b>建立參照物圖片空間</b>：到 <b>Storage</b>，點 <b>New bucket</b>，名稱輸入 <code>landmarks</code>，並把 <b>Public bucket</b> 打開（賓客查詢頁需要能直接看到圖片）。接著到 SQL Editor 再執行一次：
+        </div>
+<pre class="sql-box">create policy "public read landmarks"
+on storage.objects for select
+using (bucket_id = 'landmarks');
+
+create policy "authenticated upload landmarks"
+on storage.objects for insert
+with check (bucket_id = 'landmarks' AND auth.role() = 'authenticated');
+
+create policy "authenticated delete landmarks"
+on storage.objects for delete
+using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
       </div>
       <div id="deployHelp" style="display:none;margin-top:6px;">
         <div class="hint">
@@ -315,6 +343,9 @@ create policy "authenticated can delete"
   <div class="canvas-wrap" id="canvasWrap">
     <div class="canvas-toolbar">
       <button class="btn btn-primary btn-sm" onclick="addTable()">＋ 新增桌子</button>
+      <button class="btn btn-sm file-btn">＋ 上傳參照物
+        <input type="file" id="landmarkInput" accept="image/*" />
+      </button>
       <span class="table-count-badge">共 <b id="tableCount">0</b> 桌（每桌 6 位）</span>
       <div class="zoom-controls">
         <button onclick="zoomOut()" title="縮小">－</button>
@@ -339,7 +370,8 @@ create policy "authenticated can delete"
 /* ---------------- state ---------------- */
 let guests = [];
 let tables = [];
-let guestSeq = 1, tableSeq = 1;
+let landmarks = [];
+let guestSeq = 1, tableSeq = 1, landmarkSeq = 1;
 let selectedGuestId = null;
 let filterCategory = 'all';
 let searchTerm = '';
@@ -384,6 +416,7 @@ function getGuest(id){ return guests.find(g=>g.id===id); }
 function recalcSeq(){
   guestSeq = guests.reduce((m,g)=>Math.max(m, parseInt((g.id||'g0').slice(1))||0), 0)+1;
   tableSeq = tables.reduce((m,t)=>Math.max(m, t.no||0), 0)+1;
+  landmarkSeq = landmarks.reduce((m,l)=>Math.max(m, parseInt((l.id||'l0').slice(1))||0), 0)+1;
 }
 
 /* ---------------- guest CRUD ---------------- */
@@ -512,6 +545,7 @@ function onTablePointerUp(){
 function getCanvasLogicalSize(){
   let maxX=1200, maxY=800;
   tables.forEach(t=>{ maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280); });
+  landmarks.forEach(l=>{ maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40); });
   return {w:maxX, h:maxY};
 }
 function updateCanvasFrame(){
@@ -531,9 +565,10 @@ function zoomOut(){ setZoom(zoom-0.1); }
 function zoomReset(){ setZoom(1); }
 function zoomFit(){
   const wrap = document.getElementById('canvasWrap');
-  if(tables.length===0){ setZoom(1); return; }
+  if(tables.length===0 && landmarks.length===0){ setZoom(1); return; }
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   tables.forEach(t=>{ minX=Math.min(minX,t.x); minY=Math.min(minY,t.y); maxX=Math.max(maxX,t.x+250); maxY=Math.max(maxY,t.y+210); });
+  landmarks.forEach(l=>{ minX=Math.min(minX,l.x); minY=Math.min(minY,l.y); maxX=Math.max(maxX,l.x+l.w); maxY=Math.max(maxY,l.y+l.h); });
   const availW = wrap.clientWidth - 60, availH = wrap.clientHeight - 60;
   const contentW = Math.max(1,maxX-minX), contentH = Math.max(1,maxY-minY);
   let z = Math.min(availW/contentW, availH/contentH, 1.4);
@@ -592,6 +627,12 @@ document.getElementById('csvInput').addEventListener('change', function(e){
     error:function(){ alert('CSV 讀取失敗，請確認檔案為 UTF-8 編碼的 CSV 格式。'); e.target.value=''; }
   });
 });
+document.getElementById('landmarkInput').addEventListener('change', async function(e){
+  const file = e.target.files[0];
+  if(!file){ return; }
+  await handleLandmarkUpload(file);
+  e.target.value = '';
+});
 function downloadTemplate(){
   const csv = '姓名,主餐,歸屬\n王小明,牛肉,男方親友\n陳小華,鴨肉,女方親友\n林小同,素食,共同好友\n';
   triggerDownload('賓客名單範例.csv', '\uFEFF'+csv);
@@ -647,10 +688,11 @@ async function connectSupabase(){
     if(error) throw error;
     supabaseClient = client;
     syncEventCode = code;
-    if(data && data.data && (data.data.guests || data.data.tables)){
+    if(data && data.data && (data.data.guests || data.data.tables || data.data.landmarks)){
       isApplyingRemote = true;
       guests = data.data.guests || [];
       tables = data.data.tables || [];
+      landmarks = data.data.landmarks || [];
       recalcSeq();
       render();
       isApplyingRemote = false;
@@ -683,7 +725,7 @@ async function saveToCloud(){
   try{
     setSyncStatus('同步中...', 'busy');
     const { error } = await supabaseClient.from('wedding_seating_data').upsert({
-      event_code: syncEventCode, data:{ guests, tables }, updated_at: new Date().toISOString()
+      event_code: syncEventCode, data:{ guests, tables, landmarks }, updated_at: new Date().toISOString()
     });
     if(error) throw error;
     setSyncStatus('已同步 · '+nowStr(), 'ok');
@@ -700,6 +742,7 @@ function subscribeRealtime(){
         isApplyingRemote = true;
         guests = payload.new.data.guests || [];
         tables = payload.new.data.tables || [];
+        landmarks = payload.new.data.landmarks || [];
         recalcSeq();
         render();
         isApplyingRemote = false;
@@ -784,6 +827,14 @@ function seatCellHTML(t,i){
   if(occ) return '<div class="seat filled" ondragover="event.preventDefault()" ondrop="onSeatDrop(event,\''+t.id+'\','+i+')">'+seatChipHTML(occ)+'</div>';
   return '<div class="seat empty" onclick="onSeatClick(\''+t.id+'\','+i+')" ondragover="event.preventDefault()" ondrop="onSeatDrop(event,\''+t.id+'\','+i+')"><span>＋</span></div>';
 }
+function landmarkHTML(l){
+  return '<div class="landmark" id="landmark-'+l.id+'" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
+    '<img src="'+l.url+'" alt="" draggable="false" onpointerdown="onLandmarkPointerDown(event,\''+l.id+'\')" />'+
+    '<span class="landmark-del" onclick="onDeleteLandmark(\''+l.id+'\')" title="刪除參照物">✕</span>'+
+    '<span class="landmark-resize" onpointerdown="onLandmarkResizeStart(event,\''+l.id+'\')" title="拖曳調整大小">⤡</span>'+
+    '<span class="landmark-label" onclick="renameLandmark(\''+l.id+'\')" title="點選重新命名">'+escapeHTML(l.name||'參照物')+'</span>'+
+  '</div>';
+}
 function tableHTML(t){
   const top=[0,1,2].map(i=>seatCellHTML(t,i)).join('');
   const bottom=[3,4,5].map(i=>seatCellHTML(t,i)).join('');
@@ -801,10 +852,122 @@ function tableHTML(t){
 }
 function renderTables(){
   const canvas = document.getElementById('canvas');
-  canvas.innerHTML = tables.map(tableHTML).join('') +
-    (tables.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '');
+  canvas.innerHTML = landmarks.map(landmarkHTML).join('') + tables.map(tableHTML).join('') +
+    (tables.length===0 && landmarks.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '');
   document.getElementById('tableCount').textContent = tables.length;
   updateCanvasFrame();
+}
+
+/* ---------------- landmarks (參照物) ---------------- */
+let landmarkDragState = null;
+function onLandmarkPointerDown(e, id){
+  e.preventDefault(); e.stopPropagation();
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const l = landmarks.find(x=>x.id===id);
+  if(!l) return;
+  landmarkDragState = { id, offsetX: (e.clientX-rect.left)/zoom - l.x, offsetY: (e.clientY-rect.top)/zoom - l.y };
+  document.addEventListener('pointermove', onLandmarkPointerMove);
+  document.addEventListener('pointerup', onLandmarkPointerUp);
+}
+function onLandmarkPointerMove(e){
+  if(!landmarkDragState) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const l = landmarks.find(x=>x.id===landmarkDragState.id);
+  if(!l) return;
+  let nx = (e.clientX-rect.left)/zoom - landmarkDragState.offsetX;
+  let ny = (e.clientY-rect.top)/zoom - landmarkDragState.offsetY;
+  nx = Math.max(0, nx); ny = Math.max(0, ny);
+  l.x = nx; l.y = ny;
+  const el = document.getElementById('landmark-'+l.id);
+  if(el){ el.style.left = nx+'px'; el.style.top = ny+'px'; }
+  updateCanvasFrame();
+}
+function onLandmarkPointerUp(){
+  if(!landmarkDragState) return;
+  const l = landmarks.find(x=>x.id===landmarkDragState.id);
+  if(l){
+    l.x = Math.round(l.x/10)*10; l.y = Math.round(l.y/10)*10;
+    const el = document.getElementById('landmark-'+l.id);
+    if(el){ el.style.left=l.x+'px'; el.style.top=l.y+'px'; }
+  }
+  landmarkDragState = null;
+  document.removeEventListener('pointermove', onLandmarkPointerMove);
+  document.removeEventListener('pointerup', onLandmarkPointerUp);
+  updateCanvasFrame();
+  scheduleSave();
+}
+
+let landmarkResizeState = null;
+function onLandmarkResizeStart(e, id){
+  e.preventDefault(); e.stopPropagation();
+  const l = landmarks.find(x=>x.id===id);
+  if(!l) return;
+  landmarkResizeState = { id, startX:e.clientX, startY:e.clientY, w0:l.w, h0:l.h };
+  document.addEventListener('pointermove', onLandmarkResizeMove);
+  document.addEventListener('pointerup', onLandmarkResizeEnd);
+}
+function onLandmarkResizeMove(e){
+  if(!landmarkResizeState) return;
+  const l = landmarks.find(x=>x.id===landmarkResizeState.id);
+  if(!l) return;
+  const dx = (e.clientX-landmarkResizeState.startX)/zoom;
+  const dy = (e.clientY-landmarkResizeState.startY)/zoom;
+  l.w = Math.max(30, Math.round(landmarkResizeState.w0+dx));
+  l.h = Math.max(30, Math.round(landmarkResizeState.h0+dy));
+  const el = document.getElementById('landmark-'+l.id);
+  if(el){ el.style.width=l.w+'px'; el.style.height=l.h+'px'; }
+  updateCanvasFrame();
+}
+function onLandmarkResizeEnd(){
+  landmarkResizeState = null;
+  document.removeEventListener('pointermove', onLandmarkResizeMove);
+  document.removeEventListener('pointerup', onLandmarkResizeEnd);
+  updateCanvasFrame();
+  scheduleSave();
+}
+function renameLandmark(id){
+  const l = landmarks.find(x=>x.id===id);
+  if(!l) return;
+  const val = prompt('請輸入參照物名稱（例如：大門、舞台、簽到處）：', l.name||'');
+  if(val===null) return;
+  l.name = val.trim() || '參照物';
+  render();
+}
+function onDeleteLandmark(id){
+  if(!confirm('確定要刪除這個參照物嗎？')) return;
+  landmarks = landmarks.filter(x=>x.id!==id);
+  render();
+}
+async function handleLandmarkUpload(file){
+  if(!supabaseClient){ alert('請先完成登入與雲端連線後再上傳圖片'); return; }
+  if(!file) return;
+  const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+  const path = (syncEventCode||'default')+'/'+Date.now()+'_'+safeName;
+  try{
+    const { error: upErr } = await supabaseClient.storage.from('landmarks').upload(path, file, { upsert:true, contentType:file.type||'image/png' });
+    if(upErr) throw upErr;
+    const { data: pub } = supabaseClient.storage.from('landmarks').getPublicUrl(path);
+    const url = pub.publicUrl;
+    const img = new Image();
+    img.onload = function(){
+      const maxDim = 160;
+      const ratio = Math.min(1, maxDim/Math.max(img.naturalWidth||maxDim, img.naturalHeight||maxDim));
+      const w = Math.max(30, Math.round((img.naturalWidth||maxDim)*ratio));
+      const h = Math.max(30, Math.round((img.naturalHeight||maxDim)*ratio));
+      landmarks.push({ id:'l'+(landmarkSeq++), url, name:'參照物', x:20, y:20, w, h });
+      render();
+    };
+    img.onerror = function(){
+      landmarks.push({ id:'l'+(landmarkSeq++), url, name:'參照物', x:20, y:20, w:120, h:120 });
+      render();
+    };
+    img.src = url;
+  }catch(err){
+    console.error(err);
+    alert('圖片上傳失敗：'+(err.message||err)+'\n請確認 Supabase 已建立 landmarks 儲存空間（Storage bucket）。');
+  }
 }
 
 /* ---------------- auth ---------------- */
@@ -856,10 +1019,11 @@ async function startCloudSync(){
     try{
       const { data, error } = await supabaseClient.from('wedding_seating_data').select('data').eq('event_code', syncEventCode).maybeSingle();
       if(error) throw error;
-      if(data && data.data && (data.data.guests || data.data.tables)){
+      if(data && data.data && (data.data.guests || data.data.tables || data.data.landmarks)){
         isApplyingRemote = true;
         guests = data.data.guests || [];
         tables = data.data.tables || [];
+        landmarks = data.data.landmarks || [];
         recalcSeq();
         render();
         isApplyingRemote = false;

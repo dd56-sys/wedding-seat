@@ -62,6 +62,31 @@ create policy "authenticated can delete"
 
 建立後記得到 Table Editor 開啟這張表的 Realtime，才能讓多裝置即時同步。
 
+## 參照物圖片（建築、門口等）
+
+admin.html 可以上傳 PNG 圖片當作平面圖上的參照物（例如建築外框、大門、舞台位置），拖曳到正確位置、調整大小、命名，會跟座位資料一起同步，也會顯示在 index.html 給賓客對照方位。
+
+這需要額外建立一個 Supabase Storage bucket：
+
+1. Supabase 專案 → **Storage** → **New bucket**，名稱輸入 `landmarks`，開啟 **Public bucket**
+2. 到 SQL Editor 執行：
+
+```sql
+create policy "public read landmarks"
+on storage.objects for select
+using (bucket_id = 'landmarks');
+
+create policy "authenticated upload landmarks"
+on storage.objects for insert
+with check (bucket_id = 'landmarks' AND auth.role() = 'authenticated');
+
+create policy "authenticated delete landmarks"
+on storage.objects for delete
+using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');
+```
+
+圖片建議先壓縮到 300KB 以下再上傳，同步速度會比較快（圖片本身存在 Storage，只有網址存在座位資料裡，不會拖慢一般的拖桌子/排位操作）。
+
 接著建立後台登入帳號：到 Supabase 專案的 **Authentication → Users**，點 **Add user**，輸入 Email／密碼，並勾選 **Auto Confirm User**。這組帳密就是 `admin.html` 的登入帳號。再到 **Authentication → Settings** 把「**Allow new users to sign up**」關閉，避免其他人自行註冊帳號登入你的後台。
 
 ## 賓客姓名命名規則（重要）

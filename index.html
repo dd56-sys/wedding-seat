@@ -27,7 +27,9 @@
   .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
   .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
 
-  .search-area{padding:16px 18px;position:relative;}
+  .search-area{padding:16px 18px;position:relative;z-index:30;}
+  .suggest-overlay{position:fixed;inset:0;background:rgba(20,16,12,.45);z-index:25;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+  .suggest-overlay.show{opacity:1;pointer-events:auto;}
   .search-box{position:relative;}
   .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
   .search-input:focus{outline:none;border-color:var(--gold);}
@@ -48,7 +50,12 @@
   .stage-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     color:var(--ink-soft);font-size:13px;text-align:center;padding:20px;pointer-events:none;}
 
-  .ptable{position:absolute;width:250px;}
+  .ptable{position:absolute;width:250px;z-index:2;}
+
+  .plandmark{position:absolute;z-index:1;}
+  .plandmark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
+  .plandmark-label{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:700;
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);}
   .ptable-topbar{display:flex;justify-content:center;padding-bottom:2px;}
   .ptable-no{font-family:'Noto Serif TC',serif;font-size:11px;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .plabel-row{display:flex;justify-content:center;}
@@ -95,6 +102,7 @@
 </style>
 </head>
 <body>
+<div class="suggest-overlay" id="suggestOverlay"></div>
 
 <div class="wrap">
   <div class="header">
@@ -130,6 +138,7 @@
 const CFG = window.APP_CONFIG || {};
 let guests = [];
 let tables = [];
+let landmarks = [];
 let worldBounds = {minX:0,minY:0,maxX:1200,maxY:800};
 
 /* ---------------- meal icons (shared style with admin) ---------------- */
@@ -174,6 +183,7 @@ async function loadData(){
     if(error) throw error;
     guests = (data && data.data && data.data.guests) || [];
     tables = (data && data.data && data.data.tables) || [];
+    landmarks = (data && data.data && data.data.landmarks) || [];
     computeWorldBounds();
     renderStageStatic();
     document.getElementById('stagePlaceholder').style.display = tables.length ? 'none' : 'flex';
@@ -188,6 +198,7 @@ async function loadData(){
 function computeWorldBounds(){
   let minX=0,minY=0,maxX=1200,maxY=800;
   tables.forEach(t=>{ maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280); });
+  landmarks.forEach(l=>{ maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40); });
   worldBounds = {minX, minY, maxX, maxY};
 }
 
@@ -219,11 +230,17 @@ function ptableHTML(t){
     '<div class="plabel-row" style="margin-top:10px;"><span class="plabel">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
   '</div>';
 }
+function plandmarkHTML(l){
+  return '<div class="plandmark" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
+    '<img src="'+l.url+'" alt="" />'+
+    (l.name ? '<span class="plandmark-label">'+escapeHTML(l.name)+'</span>' : '') +
+  '</div>';
+}
 function renderStageStatic(){
   const world = document.getElementById('stageWorld');
   world.style.width = (worldBounds.maxX-worldBounds.minX)+'px';
   world.style.height = (worldBounds.maxY-worldBounds.minY)+'px';
-  world.innerHTML = tables.map(ptableHTML).join('');
+  world.innerHTML = landmarks.map(plandmarkHTML).join('') + tables.map(ptableHTML).join('');
 }
 
 function computeTransform(bounds, viewportW, viewportH, marginFactor){
@@ -365,7 +382,8 @@ function rebuildBaseNameList(){
 function onSearchInput(v){
   const q = v.trim();
   const list = document.getElementById('suggestList');
-  if(!q){ list.style.display='none'; list.innerHTML=''; return; }
+  const overlay = document.getElementById('suggestOverlay');
+  if(!q){ list.style.display='none'; list.innerHTML=''; overlay.classList.remove('show'); return; }
   const matches = baseNameList.filter(n=>n.includes(q)).slice(0,8);
   if(matches.length===0){
     list.innerHTML = '<div class="suggest-empty">查無符合的姓名</div>';
@@ -373,17 +391,20 @@ function onSearchInput(v){
     list.innerHTML = matches.map(n=>'<div class="suggest-item" onclick="selectName(\''+n.replace(/'/g,"\\'")+'\')">'+escapeHTML(n)+'</div>').join('');
   }
   list.style.display = 'block';
+  overlay.classList.add('show');
 }
 function selectName(baseName){
   document.getElementById('searchInput').value = baseName;
   document.getElementById('suggestList').style.display = 'none';
   document.getElementById('suggestList').innerHTML = '';
+  document.getElementById('suggestOverlay').classList.remove('show');
   runSearch(baseName);
 }
 function resetSearch(){
   document.getElementById('searchInput').value = '';
   document.getElementById('suggestList').style.display = 'none';
   document.getElementById('suggestList').innerHTML = '';
+  document.getElementById('suggestOverlay').classList.remove('show');
   document.getElementById('resultPanel').innerHTML = '';
   highlightSet = new Set();
   renderStageStatic();
