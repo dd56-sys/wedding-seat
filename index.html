@@ -267,7 +267,7 @@ function ptableHTML(t){
     '<div class="prow top">'+top+'</div>'+
     '<div class="psurface"></div>'+
     '<div class="prow">'+bottom+'</div>'+
-    '<div class="plabel-row" style="margin-top:10px;"><span class="plabel'+(bottomMatch?' matched':'')+'">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
+    '<div class="plabel-row" style="margin-top:15px;"><span class="plabel'+(bottomMatch?' matched':'')+'">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
   '</div>';
 }
 function plandmarkHTML(l){
@@ -299,7 +299,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 5.25s cubic-bezier(.2,.8,.2,1)' : 'none';
+  world.style.transition = animate ? 'transform 3.2s cubic-bezier(.2,.8,.2,1)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
