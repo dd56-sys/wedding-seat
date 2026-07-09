@@ -79,10 +79,10 @@
     color: #ff6a00eb;
     background:
         linear-gradient(#fff, #fff) padding-box, 
-        /* 把 90deg 改成 180deg (由上到下) */
-        linear-gradient(180deg, #ffffff, #ff6a00, #ffffff, #ff6a00, #ffffff) border-box; 
-    /* 把 300% 100% 改成 100% 300% (高度變3倍長) */
-    background-size: 100% 100%, 100% 300%; 
+        /* 【關鍵1】明確寫出 0%, 25%, 50%, 75%, 100%，確保顏色對稱分布 */
+        linear-gradient(180deg, #ffffff 0%, #ff6a00 25%, #ffffff 50%, #ff6a00 75%, #ffffff 100%) border-box; 
+    /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
+    background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
     animation: textPopUpTop 1.8s 1s cubic-bezier(.34,1.56,.64,1.2) both, plabelBorderFlow 5.2s linear infinite;
     z-index: 6;
