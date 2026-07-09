@@ -29,7 +29,7 @@
 
   .search-area{padding:16px 18px;position:relative;}
   .search-box{position:relative;}
-  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-align:center;}
+  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
   .search-input:focus{outline:none;border-color:var(--gold);}
   .search-hint{font-size:16px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
 
@@ -81,7 +81,15 @@
   .result-row .rmeal{font-size:18px;color:var(--ink-soft);}
   .result-row .rloc{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
   .result-row.unassigned .rloc{color:var(--danger);}
-  .reset-btn{display:block;margin:10px auto 4px;font-size:12.5px;color:var(--ink-soft);background:none;border:none;text-decoration:underline;}
+  .reset-btn{display:block;width:100%;margin:12px 0 4px;padding:12px;font-size:14px;font-weight:700;
+    color:#fff;background:var(--ink);border:1px solid var(--ink);border-radius:10px;letter-spacing:1px;}
+  .reset-btn:active{background:var(--gold);border-color:var(--gold);}
+
+  .stage-recenter{position:absolute;bottom:10px;right:10px;z-index:10;width:38px;height:38px;border-radius:50%;
+    background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.15);
+    display:none;align-items:center;justify-content:center;font-size:16px;color:var(--ink-soft);}
+  .stage-zoom-hint{position:absolute;top:8px;right:10px;z-index:10;font-size:10.5px;color:var(--ink-soft);
+    background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px;pointer-events:none;}
 
   .footer-note{text-align:center;font-size:11px;color:#b3a89a;padding:14px 20px 24px;}
 </style>
@@ -108,6 +116,8 @@
     <div class="stage-viewport" id="stageViewport">
       <div class="stage-world" id="stageWorld"></div>
       <div class="stage-placeholder" id="stagePlaceholder">正在載入座位圖...</div>
+      <div class="stage-zoom-hint">可用手指縮放 / 拖曳查看</div>
+      <div class="stage-recenter" id="stageRecenter" onclick="recenter()" title="回到座位">◎</div>
     </div>
     <div class="result-panel" id="resultPanel"></div>
   </div>
@@ -224,21 +234,124 @@ function computeTransform(bounds, viewportW, viewportH, marginFactor){
   const ty = viewportH/2 - scale*cy;
   return {scale, tx, ty};
 }
+
+/* ---- transform state (shared by auto animation + manual pan/zoom) ---- */
+let currentT = {scale:1, tx:0, ty:0};
+const MIN_SCALE = 0.15, MAX_SCALE = 6;
+
 function applyTransform(t, animate){
+  currentT = t;
   const world = document.getElementById('stageWorld');
   world.style.transition = animate ? 'transform 1.25s cubic-bezier(.2,.8,.2,1)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
+function readRenderedTransform(){
+  const world = document.getElementById('stageWorld');
+  const cs = getComputedStyle(world);
+  try{
+    const m = new DOMMatrixReadOnly(cs.transform);
+    return { scale: m.a || 1, tx: m.e || 0, ty: m.f || 0 };
+  }catch(err){ return currentT; }
+}
+
+let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
 function focusOn(bounds, immediate){
   const vp = document.getElementById('stageViewport');
+  lastViewportW = vp.clientWidth;
   const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, 0.92);
   applyTransform(overviewT, false);
   void vp.offsetWidth; // force reflow
-  if(immediate) return;
+  if(immediate){
+    lastFocusBounds = worldBounds; lastFocusMargin = 0.92;
+    document.getElementById('stageRecenter').style.display = 'none';
+    return;
+  }
   setTimeout(()=>{
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
     applyTransform(targetT, true);
+    lastFocusBounds = bounds; lastFocusMargin = 0.78;
+    document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
   }, 550);
+}
+function recenter(){
+  if(!lastFocusBounds) return;
+  const vp = document.getElementById('stageViewport');
+  currentT = readRenderedTransform();
+  document.getElementById('stageWorld').style.transition = 'none';
+  void vp.offsetWidth;
+  const t = computeTransform(lastFocusBounds, vp.clientWidth, vp.clientHeight, lastFocusMargin);
+  applyTransform(t, true);
+}
+
+/* ---- manual pinch-zoom / drag-pan / wheel-zoom on the stage ---- */
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function clampScale(s){ return Math.max(MIN_SCALE, Math.min(MAX_SCALE, s)); }
+
+const activePointers = new Map();
+let panStart = null;
+let pinchStartDist = null, pinchStartScale = 1, pinchStartTx = 0, pinchStartTy = 0, pinchAnchor = null;
+
+function initGestures(){
+  const vp = document.getElementById('stageViewport');
+  vp.style.touchAction = 'none';
+
+  vp.addEventListener('pointerdown', (e)=>{
+    vp.setPointerCapture(e.pointerId);
+    if(activePointers.size===0){ currentT = readRenderedTransform(); document.getElementById('stageWorld').style.transition='none'; }
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(activePointers.size===1){
+      panStart = { x:e.clientX, y:e.clientY, tx0:currentT.tx, ty0:currentT.ty };
+    } else if(activePointers.size===2){
+      const pts = Array.from(activePointers.values());
+      pinchStartDist = dist(pts[0], pts[1]);
+      pinchStartScale = currentT.scale;
+      pinchStartTx = currentT.tx; pinchStartTy = currentT.ty;
+      const center = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
+      pinchAnchor = { x:(center.x-pinchStartTx)/pinchStartScale, y:(center.y-pinchStartTy)/pinchStartScale };
+      panStart = null;
+    }
+  });
+  vp.addEventListener('pointermove', (e)=>{
+    if(!activePointers.has(e.pointerId)) return;
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(activePointers.size===1 && panStart){
+      const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+      applyTransform({scale:currentT.scale, tx:panStart.tx0+dx, ty:panStart.ty0+dy}, false);
+    } else if(activePointers.size===2 && pinchStartDist){
+      const pts = Array.from(activePointers.values());
+      const d = dist(pts[0], pts[1]);
+      const center = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
+      const newScale = clampScale(pinchStartScale * (d/pinchStartDist));
+      const newTx = center.x - pinchAnchor.x*newScale;
+      const newTy = center.y - pinchAnchor.y*newScale;
+      applyTransform({scale:newScale, tx:newTx, ty:newTy}, false);
+    }
+  });
+  function endPointer(e){
+    activePointers.delete(e.pointerId);
+    pinchStartDist = null;
+    if(activePointers.size===1){
+      const remaining = Array.from(activePointers.values())[0];
+      panStart = { x:remaining.x, y:remaining.y, tx0:currentT.tx, ty0:currentT.ty };
+    } else {
+      panStart = null;
+    }
+  }
+  vp.addEventListener('pointerup', endPointer);
+  vp.addEventListener('pointercancel', endPointer);
+  vp.addEventListener('pointerleave', (e)=>{ if(activePointers.has(e.pointerId)) endPointer(e); });
+
+  vp.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    currentT = readRenderedTransform();
+    document.getElementById('stageWorld').style.transition='none';
+    const rect = vp.getBoundingClientRect();
+    const cx = e.clientX-rect.left, cy = e.clientY-rect.top;
+    const factor = e.deltaY < 0 ? 1.15 : 0.87;
+    const newScale = clampScale(currentT.scale * factor);
+    const worldX = (cx-currentT.tx)/currentT.scale, worldY = (cy-currentT.ty)/currentT.scale;
+    applyTransform({scale:newScale, tx:cx-worldX*newScale, ty:cy-worldY*newScale}, false);
+  }, {passive:false});
 }
 
 /* ---------------- search ---------------- */
@@ -264,10 +377,13 @@ function onSearchInput(v){
 function selectName(baseName){
   document.getElementById('searchInput').value = baseName;
   document.getElementById('suggestList').style.display = 'none';
+  document.getElementById('suggestList').innerHTML = '';
   runSearch(baseName);
 }
 function resetSearch(){
   document.getElementById('searchInput').value = '';
+  document.getElementById('suggestList').style.display = 'none';
+  document.getElementById('suggestList').innerHTML = '';
   document.getElementById('resultPanel').innerHTML = '';
   highlightSet = new Set();
   renderStageStatic();
@@ -278,7 +394,8 @@ function runSearch(baseName){
   const matched = guests.filter(g=> baseNameOf(g.name) === baseName);
   const resultPanel = document.getElementById('resultPanel');
   if(matched.length===0){
-    resultPanel.innerHTML = '<div class="result-card">查無「'+escapeHTML(baseName)+'」的資料，請確認姓名是否正確</div>';
+    resultPanel.innerHTML = '<div class="result-card">查無「'+escapeHTML(baseName)+'」的資料，請確認姓名是否正確</div>'+
+      '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
     return;
   }
   highlightSet = new Set(matched.filter(g=>g.tableId!=null).map(g=>g.id));
@@ -290,8 +407,8 @@ function runSearch(baseName){
     const t = seated ? tables.find(x=>x.id===g.tableId) : null;
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
-      '<span class="rname">'+escapeHTML(g.name)+'</span>'+
       '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
+      '<span class="rname">'+escapeHTML(g.name)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
     '</div>';
@@ -312,17 +429,25 @@ function runSearch(baseName){
   }
 }
 
-document.addEventListener('click', function(e){
-  if(!e.target.closest('.search-box')){
-    document.getElementById('suggestList').style.display='none';
-  }
-});
+/* 只有點選下拉選單中的姓名才會關閉選單，點擊其他地方不會關閉 */
 
+let resizeDebounce = null;
 window.addEventListener('resize', function(){
-  focusOn(worldBounds, true);
+  clearTimeout(resizeDebounce);
+  resizeDebounce = setTimeout(()=>{
+    const vp = document.getElementById('stageViewport');
+    // 手機瀏覽器捲動時網址列收合只會改變高度，寬度不變時忽略，避免畫面自動縮小
+    if(Math.abs(vp.clientWidth - lastViewportW) < 40) return;
+    lastViewportW = vp.clientWidth;
+    if(lastFocusBounds){
+      const t = computeTransform(lastFocusBounds, vp.clientWidth, vp.clientHeight, lastFocusMargin);
+      applyTransform(t, false);
+    }
+  }, 200);
 });
 
 /* ---------------- init ---------------- */
+initGestures();
 loadData().then(()=>{ rebuildBaseNameList(); });
 </script>
 </body>
