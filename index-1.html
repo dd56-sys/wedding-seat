@@ -55,35 +55,13 @@
   .plandmark{position:absolute;z-index:1;}
   .plandmark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
   .plandmark-label{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:700;
-    background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);}
-  .ptable-topbar{display:flex;justify-content:center;padding-bottom:2px;}
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);display: none;}
+  /*.ptable-topbar{display:flex;justify-content:center;padding-bottom:2px;}*/
+  .ptable-topbar{display:none;justify-content:center;padding-bottom:2px;}
   .ptable-no{font-family:'Noto Serif TC',serif;font-size:11px;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
-  .plabel-row{display:flex;justify-content:center;overflow:visible;}
+  .plabel-row{display:flex;justify-content:center;}
   .plabel{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);background:#fff;
-    border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;position:relative;}
-  .plabel.matched{
-    border:2.5px solid transparent;
-    padding:3px 13px;
-    font-size:14.5px;
-    color:var(--ink);
-    background:
-      linear-gradient(#fff,#fff) padding-box,
-      linear-gradient(90deg,#B8935A,#C4453B,#3F8F5C,#2E6DA4,#B8935A) border-box;
-    background-size: 100% 100%, 300% 100%;
-    box-shadow:0 3px 12px rgba(184,147,90,.4);
-    animation: textPopUpTop .65s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
-    z-index:6;
-  }
-  @keyframes plabelBorderFlow{
-    0%{ background-position: 0 0, 0% 0; }
-    100%{ background-position: 0 0, 300% 0; }
-  }
-  @keyframes textPopUpTop{
-    0%{ opacity:0; transform: translateY(18px) scale(.55); }
-    55%{ opacity:1; transform: translateY(-9px) scale(1.2); }
-    78%{ transform: translateY(2px) scale(.94); }
-    100%{ opacity:1; transform: translateY(0) scale(1); }
-  }
+    border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;}
   .prow{display:flex;gap:6px;justify-content:center;overflow:visible;}
   .prow.top{margin-top:18px;}
   .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
@@ -227,7 +205,6 @@ function computeWorldBounds(){
 
 /* ---------------- stage rendering ---------------- */
 let highlightSet = new Set();
-let highlightLabelKeys = new Set();
 
 function pseatCellHTML(t, i){
   const occ = getGuestAtSeat(t.id, i);
@@ -245,15 +222,13 @@ function pseatCellHTML(t, i){
 function ptableHTML(t){
   const top=[0,1,2].map(i=>pseatCellHTML(t,i)).join('');
   const bottom=[3,4,5].map(i=>pseatCellHTML(t,i)).join('');
-  const topMatch = highlightLabelKeys.has(t.id+'-top');
-  const bottomMatch = highlightLabelKeys.has(t.id+'-bottom');
   return '<div class="ptable" style="left:'+t.x+'px; top:'+t.y+'px;">'+
     '<div class="ptable-topbar"><span class="ptable-no">#'+t.no+'</span></div>'+
-    '<div class="plabel-row"><span class="plabel'+(topMatch?' matched':'')+'">'+escapeHTML(t.topName||(t.no+'A'))+'</span></div>'+
+    '<div class="plabel-row"><span class="plabel">'+escapeHTML(t.topName||(t.no+'A'))+'</span></div>'+
     '<div class="prow top">'+top+'</div>'+
     '<div class="psurface"></div>'+
     '<div class="prow">'+bottom+'</div>'+
-    '<div class="plabel-row" style="margin-top:10px;"><span class="plabel'+(bottomMatch?' matched':'')+'">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
+    '<div class="plabel-row" style="margin-top:10px;"><span class="plabel">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
   '</div>';
 }
 function plandmarkHTML(l){
@@ -433,7 +408,6 @@ function resetSearch(){
   document.getElementById('suggestOverlay').classList.remove('show');
   document.getElementById('resultPanel').innerHTML = '';
   highlightSet = new Set();
-  highlightLabelKeys = new Set();
   renderStageStatic();
   focusOn(worldBounds);
 }
@@ -442,16 +416,11 @@ function runSearch(baseName){
   const matched = guests.filter(g=> baseNameOf(g.name) === baseName);
   const resultPanel = document.getElementById('resultPanel');
   if(matched.length===0){
-    highlightSet = new Set();
-    highlightLabelKeys = new Set();
-    renderStageStatic();
     resultPanel.innerHTML = '<div class="result-card">查無「'+escapeHTML(baseName)+'」的資料，請確認姓名是否正確</div>'+
       '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
     return;
   }
-  const seatedMatched = matched.filter(g=>g.tableId!=null);
-  highlightSet = new Set(seatedMatched.map(g=>g.id));
-  highlightLabelKeys = new Set(seatedMatched.map(g=> g.tableId+'-'+(g.seatIndex<3 ? 'top' : 'bottom')));
+  highlightSet = new Set(matched.filter(g=>g.tableId!=null).map(g=>g.id));
   renderStageStatic();
 
   const seatedTables = new Set(matched.filter(g=>g.tableId!=null).map(g=>g.tableId));
@@ -460,7 +429,7 @@ function runSearch(baseName){
     const t = seated ? tables.find(x=>x.id===g.tableId) : null;
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
-      '<span class="rname">'+escapeHTML(g.name)+'</span>'+
+      '<span class="rname">'+escapeHTML(g.name)+'</span>'+    
       '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
