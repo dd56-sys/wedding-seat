@@ -279,6 +279,19 @@ function renderStageStatic(){
   world.style.width = (worldBounds.maxX-worldBounds.minX)+'px';
   world.style.height = (worldBounds.maxY-worldBounds.minY)+'px';
   world.innerHTML = landmarks.map(plandmarkHTML).join('') + tables.map(ptableHTML).join('');
+  fitTextToWidth(world.querySelectorAll('.pseat-name'), 7);
+}
+
+/* ---- 姓名過長時自動縮小字體，而不是被裁切看不到 ---- */
+function fitTextToWidth(elements, minPx){
+  elements.forEach(el=>{
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    let guard = 8;
+    while(el.scrollWidth > el.clientWidth + 0.5 && size > minPx && guard-- > 0){
+      size -= 1;
+      el.style.fontSize = size + 'px';
+    }
+  });
 }
 
 function computeTransform(bounds, viewportW, viewportH, marginFactor){
