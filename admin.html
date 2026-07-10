@@ -187,6 +187,35 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="guestEditModal" onclick="if(event.target===this) closeGuestEdit()">
+  <div class="modal-box">
+    <h3>編輯賓客資料</h3>
+    <div class="form-grid">
+      <input id="editName" type="text" placeholder="姓名" onkeydown="if(event.key==='Enter') saveGuestEdit();" />
+      <div class="row-2">
+        <select id="editMeal">
+          <option value="">主餐</option>
+          <option value="牛肉">牛肉</option>
+          <option value="鴨肉">鴨肉</option>
+          <option value="兒童餐">兒童餐</option>
+          <option value="素食">素食</option>
+          <option value="嬰兒">嬰兒（無餐）</option>
+        </select>
+        <select id="editCategory">
+          <option value="">歸屬</option>
+          <option value="男方親友">男方親友</option>
+          <option value="女方親友">女方親友</option>
+          <option value="共同好友">共同好友</option>
+        </select>
+      </div>
+      <div class="row-2" style="margin-top:4px;">
+        <button class="btn btn-sm btn-block" onclick="closeGuestEdit()">取消</button>
+        <button class="btn btn-primary btn-block" onclick="saveGuestEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="appRoot" style="display:none;">
 
 <div class="app-header">
@@ -443,6 +472,35 @@ function onChipRemove(e, id){
 }
 function onChipClick(id){ selectedGuestId = (selectedGuestId===id) ? null : id; render(); }
 function onChipDragStart(e, id){ e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed='move'; }
+
+/* ---------------- guest edit modal ---------------- */
+let editingGuestId = null;
+function openGuestEdit(id){
+  const g = getGuest(id);
+  if(!g) return;
+  editingGuestId = id;
+  document.getElementById('editName').value = g.name || '';
+  document.getElementById('editMeal').value = g.meal || '';
+  document.getElementById('editCategory').value = g.category || '';
+  document.getElementById('guestEditModal').classList.add('show');
+  setTimeout(()=>document.getElementById('editName').focus(), 50);
+}
+function closeGuestEdit(){
+  editingGuestId = null;
+  document.getElementById('guestEditModal').classList.remove('show');
+}
+function saveGuestEdit(){
+  if(!editingGuestId) return;
+  const g = getGuest(editingGuestId);
+  if(!g) return;
+  const name = document.getElementById('editName').value.trim();
+  if(!name){ alert('請輸入姓名'); return; }
+  g.name = name;
+  g.meal = document.getElementById('editMeal').value;
+  g.category = document.getElementById('editCategory').value;
+  closeGuestEdit();
+  render();
+}
 
 /* ---------------- seat assignment ---------------- */
 function assign(guestId, tableId, seatIndex){
@@ -804,7 +862,7 @@ function renderStats(){
   Object.keys(meals).forEach(m=>{
     if(meals[m]>0){
       const icon = m==='未填' ? '' : mealIcon(m,13);
-      html += '<div class="stat-line"><span class="stat-label">'+icon+m+'</span><b>'+meals[m]+'</b></div>';
+      html += '<div class="stat-line"><span class="stat-label">'+icon+'<span>'+m+'</span></span><b>'+meals[m]+'</b></div>';
     }
   });
   html += '</div>';
