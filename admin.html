@@ -381,7 +381,7 @@ const CFG = window.APP_CONFIG || {};
 
 /* ---------------- icons ---------------- */
 function mealColor(meal){
-  const map = {'牛肉':'#A8553F','鴨肉':'#ff9b0e','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
+  const map = {'牛肉':'#A8553F','鴨肉':'#ffe000','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
   return map[meal] || '#B0A695';
 }
 function mealIcon(meal, size){
@@ -492,6 +492,28 @@ function onDeleteTable(tableId){
   render();
 }
 
+/* ---- alignment guides (smart snap when dragging tables/landmarks) ---- */
+const SNAP_SCREEN_PX = 8;
+function findSnapX(nx, excludeId){
+  const threshold = SNAP_SCREEN_PX / zoom;
+  const targets = [...tables.filter(t=>t.id!==excludeId).map(t=>t.x), ...landmarks.filter(l=>l.id!==excludeId).map(l=>l.x)];
+  for(const tx of targets){ if(Math.abs(nx-tx) < threshold) return tx; }
+  return null;
+}
+function findSnapY(ny, excludeId){
+  const threshold = SNAP_SCREEN_PX / zoom;
+  const targets = [...tables.filter(t=>t.id!==excludeId).map(t=>t.y), ...landmarks.filter(l=>l.id!==excludeId).map(l=>l.y)];
+  for(const ty of targets){ if(Math.abs(ny-ty) < threshold) return ty; }
+  return null;
+}
+function showGuideV(x){ const el=document.getElementById('guideV'); if(el){ el.style.left=x+'px'; el.style.display='block'; } }
+function showGuideH(y){ const el=document.getElementById('guideH'); if(el){ el.style.top=y+'px'; el.style.display='block'; } }
+function hideGuides(){
+  const v=document.getElementById('guideV'), h=document.getElementById('guideH');
+  if(v) v.style.display='none';
+  if(h) h.style.display='none';
+}
+
 /* ---- table drag (pointer events, zoom-aware) ---- */
 let dragState = null;
 function onTablePointerDown(e, tableId){
@@ -499,7 +521,7 @@ function onTablePointerDown(e, tableId){
   const canvas = document.getElementById('canvas');
   const rect = canvas.getBoundingClientRect();
   const t = tables.find(x=>x.id===tableId);
-  dragState = { tableId, offsetX: (e.clientX-rect.left)/zoom - t.x, offsetY: (e.clientY-rect.top)/zoom - t.y };
+  dragState = { tableId, offsetX: (e.clientX-rect.left)/zoom - t.x, offsetY: (e.clientY-rect.top)/zoom - t.y, snappedX:null, snappedY:null };
   document.addEventListener('pointermove', onTablePointerMove);
   document.addEventListener('pointerup', onTablePointerUp);
 }
@@ -511,6 +533,11 @@ function onTablePointerMove(e){
   let nx = (e.clientX-rect.left)/zoom - dragState.offsetX;
   let ny = (e.clientY-rect.top)/zoom - dragState.offsetY;
   nx = Math.max(0, nx); ny = Math.max(0, ny);
+  const snapX = findSnapX(nx, dragState.tableId);
+  const snapY = findSnapY(ny, dragState.tableId);
+  if(snapX!=null){ nx = snapX; showGuideV(snapX); } else { const v=document.getElementById('guideV'); if(v) v.style.display='none'; }
+  if(snapY!=null){ ny = snapY; showGuideH(snapY); } else { const h=document.getElementById('guideH'); if(h) h.style.display='none'; }
+  dragState.snappedX = snapX; dragState.snappedY = snapY;
   t.x = nx; t.y = ny;
   const el = document.getElementById('table-'+t.id);
   if(el){ el.style.left = nx+'px'; el.style.top = ny+'px'; }
@@ -521,6 +548,7 @@ function onTablePointerUp(){
   const t = tables.find(x=>x.id===dragState.tableId);
   if(t){
     t.x = Math.round(t.x/10)*10; t.y = Math.round(t.y/10)*10;
+    t.y = (dragState.snappedY!=null) ? dragState.snappedY : Math.round(t.y/10)*10;
     const el = document.getElementById('table-'+t.id);
     if(el){ el.style.left=t.x+'px'; el.style.top=t.y+'px'; }
   }
@@ -843,7 +871,9 @@ function tableHTML(t){
 function renderTables(){
   const canvas = document.getElementById('canvas');
   canvas.innerHTML = landmarks.map(landmarkHTML).join('') + tables.map(tableHTML).join('') +
-    (tables.length===0 && landmarks.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '');
+    (tables.length===0 && landmarks.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '') +
+    '<div id="guideV" class="align-guide guide-v" style="display:none;"></div>'+
+    '<div id="guideH" class="align-guide guide-h" style="display:none;"></div>';
   document.getElementById('tableCount').textContent = tables.length;
   updateCanvasFrame();
 }
@@ -856,7 +886,7 @@ function onLandmarkPointerDown(e, id){
   const rect = canvas.getBoundingClientRect();
   const l = landmarks.find(x=>x.id===id);
   if(!l) return;
-  landmarkDragState = { id, offsetX: (e.clientX-rect.left)/zoom - l.x, offsetY: (e.clientY-rect.top)/zoom - l.y };
+  landmarkDragState = { id, offsetX: (e.clientX-rect.left)/zoom - l.x, offsetY: (e.clientY-rect.top)/zoom - l.y, snappedX:null, snappedY:null };
   document.addEventListener('pointermove', onLandmarkPointerMove);
   document.addEventListener('pointerup', onLandmarkPointerUp);
 }
@@ -869,6 +899,11 @@ function onLandmarkPointerMove(e){
   let nx = (e.clientX-rect.left)/zoom - landmarkDragState.offsetX;
   let ny = (e.clientY-rect.top)/zoom - landmarkDragState.offsetY;
   nx = Math.max(0, nx); ny = Math.max(0, ny);
+  const snapX = findSnapX(nx, landmarkDragState.id);
+  const snapY = findSnapY(ny, landmarkDragState.id);
+  if(snapX!=null){ nx = snapX; showGuideV(snapX); } else { const v=document.getElementById('guideV'); if(v) v.style.display='none'; }
+  if(snapY!=null){ ny = snapY; showGuideH(snapY); } else { const h=document.getElementById('guideH'); if(h) h.style.display='none'; }
+  landmarkDragState.snappedX = snapX; landmarkDragState.snappedY = snapY;
   l.x = nx; l.y = ny;
   const el = document.getElementById('landmark-'+l.id);
   if(el){ el.style.left = nx+'px'; el.style.top = ny+'px'; }
@@ -878,11 +913,13 @@ function onLandmarkPointerUp(){
   if(!landmarkDragState) return;
   const l = landmarks.find(x=>x.id===landmarkDragState.id);
   if(l){
-    l.x = Math.round(l.x/10)*10; l.y = Math.round(l.y/10)*10;
+    l.x = (landmarkDragState.snappedX!=null) ? landmarkDragState.snappedX : Math.round(l.x/10)*10;
+    l.y = (landmarkDragState.snappedY!=null) ? landmarkDragState.snappedY : Math.round(l.y/10)*10;
     const el = document.getElementById('landmark-'+l.id);
     if(el){ el.style.left=l.x+'px'; el.style.top=l.y+'px'; }
   }
   landmarkDragState = null;
+  hideGuides();
   document.removeEventListener('pointermove', onLandmarkPointerMove);
   document.removeEventListener('pointerup', onLandmarkPointerUp);
   updateCanvasFrame();
