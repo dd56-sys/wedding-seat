@@ -111,7 +111,7 @@
   }
   .pseat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
-  .pseat-badge svg{width:27px;height:27px;display:block;}
+  /*.pseat-badge svg{width:27px;height:27px;display:block;}*/
   .pseat-name{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:15px;font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
 
@@ -183,16 +183,11 @@ function mealColor(meal){
   const map = {'牛肉':'#A8553F','鴨肉':'#ff9b0e','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
   return map[meal] || '#B0A695';
 }
-function mealIcon(meal){
-  const c = mealColor(meal);
-  const icons = {
-    '牛肉': `<svg viewBox="0 0 32 32"><path d="M7 12c-2 3-2 7 0 10 3 4 9 5 13 2 3-2 4-6 3-10-1-4-5-7-9-6-3 1-5 2-7 4z" fill="${c}"/><path d="M10 14c2 3 6 3 9 7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.75"/></svg>`,
-    '鴨肉': `<svg viewBox="0 0 32 32"><path d="M12 7c3-3 8-2 9.5 2 1.3 3.3-0.5 6.5-3 7.8L11 25c-1.2 1.4-3.4 1.4-4.6 0-1.2-1.3-1-3.3 0.3-4.4l8-6.6c-1.6-1.8-1-4.7 0.7-6.3z" fill="${c}"/><ellipse cx="7.5" cy="24.5" rx="2.6" ry="2.3" fill="${c}"/></svg>`,
-    '兒童餐': `<svg viewBox="0 0 32 32"><path d="M16 6c-5.5 0-9.5 3.3-9.5 8 0 3 1.8 5 4 6.2l0.8 7.3c0.1 1 1 1.8 2 1.8h5.4c1 0 1.9-0.8 2-1.8l0.8-7.3c2.2-1.2 4-3.2 4-6.2 0-4.7-4-8-9.5-8z" fill="${c}"/><circle cx="16" cy="14" r="3.2" fill="#fff" opacity="0.9"/></svg>`,
-    '素食': `<svg viewBox="0 0 32 32"><path d="M16 4c8 1.5 12.5 7.8 11.3 15.8-1 6.7-7.3 10.6-13.8 8.7C7 26.7 3.7 20.6 5 13.8 6.2 7.6 10.8 5 16 4z" fill="${c}"/><path d="M10 24C13.5 16.5 18 10.5 25 7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.8"/></svg>`,
-    '嬰兒': `<svg viewBox="0 0 32 32"><rect x="11" y="12" width="10" height="15" rx="4" fill="${c}"/><rect x="13" y="6" width="6" height="7" rx="2" fill="${c}" opacity="0.55"/><ellipse cx="16" cy="4.3" rx="2.6" ry="2" fill="${c}"/><rect x="12.5" y="17.5" width="7" height="1.6" rx="0.8" fill="#fff" opacity="0.7"/><rect x="12.5" y="21" width="7" height="1.6" rx="0.8" fill="#fff" opacity="0.5"/></svg>`
-  };
-  return icons[meal] || `<svg viewBox="0 0 32 32"><path d="M9.5 3v10.5c0 1.7 0.9 2.6 1.5 2.9V29h2V16.4c0.6-0.3 1.5-1.2 1.5-2.9V3h-1.3v8.5h-0.9V3h-1V11.5h-0.9V3z" fill="${c}"/><path d="M22 3c-2.2 0-3.5 3.3-3.5 6.5 0 2.3 1 4.3 2 5.4V29h2V14.9c1-1.1 2-3.1 2-5.4C24.5 6.3 24.2 3 22 3z" fill="${c}"/></svg>`;
+function mealIcon(meal, size){
+  const px = size || 16;
+  const map = {'牛肉':'🥩','鴨肉':'🍗','兒童餐':'🧒','素食':'🥗','嬰兒':'🍼'};
+  const e = map[meal] || '🍽️';
+  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;">'+e+'</span>';
 }
 function escapeHTML(s){
   return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -250,7 +245,7 @@ function pseatCellHTML(t, i){
   if(isMatch){
     const c = mealColor(occ.meal);
     return '<div class="pseat filled match" style="--mc:'+c+'">'+
-      '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal)+'</div>'+
+      '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal,17)+'</div>'+
       '<span class="pseat-name">'+escapeHTML(occ.name)+'</span>'+
     '</div>';
   }
