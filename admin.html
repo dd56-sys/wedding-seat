@@ -66,7 +66,6 @@
   .stats-box{background:var(--ivory);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.9;}
   .stats-box .stat-line{display:flex;justify-content:space-between;align-items:center;}
   .stats-box .stat-label{color:var(--ink-soft);display:flex;align-items:center;gap:5px;}
-  .stats-box .stat-label svg{width:14px;height:14px;}
   .warn{color:var(--danger);font-weight:600;}
 
   .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
@@ -79,7 +78,6 @@
   .chip{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:7px;border:1.5px solid var(--line);background:#fff;font-size:13px;cursor:grab;}
   .chip.selected{box-shadow:0 0 0 2px var(--gold);border-color:var(--gold);}
   .chip-icon{flex:none;width:18px;height:18px;}
-  .chip-icon svg{width:100%;height:100%;display:block;}
   .chip-name{font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .chip-meal{font-size:11px;color:var(--ink-soft);flex:none;}
   .chip-del{opacity:.45;flex:none;font-size:12px;}
@@ -94,7 +92,6 @@
   .legend-row{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--ink-soft);align-items:center;}
   .legend-row .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle;}
   .legend-row .lg-icon{width:14px;height:14px;vertical-align:middle;margin-right:3px;}
-  .legend-row .lg-icon svg{width:100%;height:100%;display:block;}
 
   .canvas-toolbar{position:sticky;top:0;left:0;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
     padding:10px 16px;background:rgba(250,246,239,.94);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);}
@@ -145,7 +142,6 @@
   .seat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
     box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
-  .seat-badge svg{width:17px;height:17px;display:block;}
   .seat-name{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;line-height:1.2;}
   .seat-remove{position:absolute;top:1px;right:2px;font-size:10px;color:#00000055;line-height:1;padding:2px;z-index:6;}
   .seat-remove:hover{color:var(--danger);}
@@ -388,16 +384,11 @@ function mealColor(meal){
   const map = {'牛肉':'#A8553F','鴨肉':'#ff9b0e','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
   return map[meal] || '#B0A695';
 }
-function mealIcon(meal){
-  const c = mealColor(meal);
-  const icons = {
-    '牛肉': `<svg viewBox="0 0 32 32"><path d="M16 5c-2 0-3 2-3 2s-3-3-6-1c-2 1-2 4 0 5 0 0-2 2-2 5 0 5 5 9 11 9s11-4 11-9c0-3-2-5-2-5 2-1 2-4 0-5-3-2-6 1-6 1s-1-2-3-2z" fill="${c}"/><ellipse cx="16" cy="21" rx="4" ry="3" fill="#fff" opacity="0.9"/><circle cx="14.3" cy="21" r="0.9" fill="${c}"/><circle cx="17.7" cy="21" r="0.9" fill="${c}"/><circle cx="11.3" cy="15" r="1.1" fill="#2b2b2b"/><circle cx="20.7" cy="15" r="1.1" fill="#2b2b2b"/></svg>`,
-    '鴨肉': `<svg viewBox="0 0 32 32"><ellipse cx="17" cy="14" rx="8" ry="7" fill="${c}"/><path d="M9 15c-3 0-6 1-6 3s3 2 6 1z" fill="${c}"/><circle cx="19.5" cy="11.5" r="1.2" fill="#2b2b2b"/></svg>`,
-    '兒童餐': `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="${c}"/><circle cx="11.5" cy="14" r="1.6" fill="#fff"/><circle cx="20.5" cy="14" r="1.6" fill="#fff"/><path d="M10 20c2 3 10 3 12 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
-    '素食': `<svg viewBox="0 0 32 32"><path d="M6 27C5 14 17 6 27 6c1 10-3 22-19 22-1.3 0-1.7-0.3-2-1z" fill="${c}"/><path d="M9 24C13 16 18 12 24 9" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/></svg>`,
-    '嬰兒': `<svg viewBox="0 0 32 32"><rect x="12" y="10" width="8" height="14" rx="3" fill="${c}"/><rect x="13" y="4.5" width="6" height="6.5" rx="2" fill="${c}" opacity="0.55"/><rect x="14" y="2" width="4" height="3" rx="1.5" fill="${c}"/></svg>`
-  };
-  return icons[meal] || `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" fill="none" stroke="${c}" stroke-width="2.5"/><text x="16" y="21" font-size="14" text-anchor="middle" fill="${c}" font-family="sans-serif">?</text></svg>`;
+function mealIcon(meal, size){
+  const px = size || 16;
+  const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'🤖','素食':'🌳','嬰兒':'🍼'};
+  const e = map[meal] || '🍽️';
+  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;">'+e+'</span>';
 }
 
 /* ---------------- helpers ---------------- */
@@ -763,7 +754,7 @@ function renderLegend(){
   const cats = [['男方親友','groom'],['女方親友','bride'],['共同好友','both']];
   let html = cats.map(c=>'<span><span class="sw" style="background:var(--'+c[1]+')"></span>'+c[0]+'</span>').join('');
   const meals = ['牛肉','鴨肉','兒童餐','素食','嬰兒'];
-  html += meals.map(m=>'<span><span class="lg-icon" style="display:inline-flex;">'+mealIcon(m)+'</span>'+m+'</span>').join('');
+  html += meals.map(m=>'<span><span class="lg-icon" style="display:inline-flex;">'+mealIcon(m,12)+'</span>'+m+'</span>').join('');
   document.getElementById('legendRow').innerHTML = html;
 }
 function renderStats(){
@@ -780,7 +771,7 @@ function renderStats(){
   html += '<div style="margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;">';
   Object.keys(meals).forEach(m=>{
     if(meals[m]>0){
-      const icon = m==='未填' ? '' : mealIcon(m);
+      const icon = m==='未填' ? '' : mealIcon(m,13);
       html += '<div class="stat-line"><span class="stat-label">'+icon+m+'</span><b>'+meals[m]+'</b></div>';
     }
   });
@@ -798,7 +789,7 @@ function guestChipHTML(g){
   const sel = selectedGuestId===g.id ? 'selected' : '';
   return '<div class="chip '+categoryClass(g.category)+' '+sel+'" draggable="true" '+
     'onclick="onChipClick(\''+g.id+'\')" ondragstart="onChipDragStart(event,\''+g.id+'\')">'+
-    '<span class="chip-icon">'+mealIcon(g.meal)+'</span>'+
+    '<span class="chip-icon">'+mealIcon(g.meal,14)+'</span>'+
     '<span class="chip-name">'+escapeHTML(g.name)+'</span>'+
     '<span class="chip-meal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
     '<span class="chip-del" onclick="onChipDelete(event,\''+g.id+'\')" title="刪除賓客">🗑</span>'+
@@ -809,7 +800,7 @@ function seatChipHTML(g){
   const c = mealColor(g.meal);
   return '<div class="seat-chip '+categoryClass(g.category)+' '+sel+'" draggable="true" '+
     'ondragstart="onChipDragStart(event,\''+g.id+'\')" onclick="event.stopPropagation(); onChipClick(\''+g.id+'\')">'+
-    '<div class="seat-badge" style="border-color:'+c+'">'+mealIcon(g.meal)+'</div>'+
+    '<div class="seat-badge" style="border-color:'+c+'">'+mealIcon(g.meal,17)+'</div>'+
     '<span class="seat-name">'+escapeHTML(g.name)+'</span>'+
     '<span class="seat-remove" onclick="onChipRemove(event,\''+g.id+'\')">✕</span>'+
   '</div>';
