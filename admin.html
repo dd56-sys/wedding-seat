@@ -390,7 +390,7 @@ function mealColor(meal){
 }
 function mealIcon(meal, size){
   const px = size || 16;
-  const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'🤖','素食':'🌳','嬰兒':'🍼'};
+  const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'👶','素食':'🌳','嬰兒':'🍼'};
   const e = map[meal] || '🍽️';
   return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;">'+e+'</span>';
 }
