@@ -85,7 +85,8 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;
+    /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
+    animation:seatPopIn 1s 2s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
     z-index: 6;
     margin: -12px;
     bottom: 13px;
@@ -157,7 +158,7 @@
   @keyframes seatPopIn{
     0%{ opacity:0.8; transform:scale(1) rotate(0deg); }
     50%{ opacity:1; transform:scale(1) rotate(0deg); }
-    70%{ transform:scale(1.2) rotate(-10deg); }
+    70%{ transform:scale(1.1) rotate(0deg); }
     100%{ opacity:1; transform:scale(1) rotate(0deg); }
   }
   @keyframes pulseSeat{
