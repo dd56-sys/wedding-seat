@@ -113,6 +113,11 @@
   .landmark img{width:100%;height:100%;object-fit:contain;cursor:grab;-webkit-user-drag:none;display:block;
     filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
   .landmark img:active{cursor:grabbing;}
+  .landmark.locked img{cursor:default;filter:drop-shadow(0 2px 5px rgba(0,0,0,.15)) grayscale(.15);}
+  .landmark.locked{outline:1.5px dashed #b3a89a;outline-offset:3px;}
+  .landmark-lock{position:absolute;top:-8px;left:-8px;width:18px;height:18px;border-radius:50%;background:#fff;
+    border:1px solid var(--line);font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .landmark-lock:hover{border-color:var(--gold);}
   .landmark-del{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:#fff;
     border:1px solid var(--line);font-size:10px;display:flex;align-items:center;justify-content:center;color:#c9bdae;cursor:pointer;}
   .landmark-del:hover{color:var(--danger);}
@@ -141,6 +146,15 @@
   .seat-chip{width:100%;height:100%;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
     border:1.5px solid var(--line);position:relative;cursor:grab;padding:4px 4px 5px;overflow:visible;z-index:2;}
   .seat-chip.selected{box-shadow:0 0 0 2px var(--gold) inset;}
+  .seat-chip.jelly-pop{animation: jellyPop .6s cubic-bezier(.32,1.7,.55,1) both;}
+  @keyframes jellyPop{
+    0%{ transform: scale(.25); opacity:0; }
+    35%{ transform: scale(1.22,0.8); opacity:1; }
+    50%{ transform: scale(.85,1.18); }
+    65%{ transform: scale(1.08,0.94); }
+    80%{ transform: scale(.96,1.04); }
+    100%{ transform: scale(1,1); }
+  }
   .seat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
     box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
@@ -624,6 +638,7 @@ function onTablePointerUp(){
     if(el){ el.style.left=t.x+'px'; el.style.top=t.y+'px'; }
   }
   dragState = null;
+  hideGuides();
   document.removeEventListener('pointermove', onTablePointerMove);
   document.removeEventListener('pointerup', onTablePointerUp);
   updateCanvasFrame();
@@ -677,6 +692,7 @@ function autoArrange(){
   for(const g of sorted){
     if(ti>=sortedTables.length) break;
     g.tableId = sortedTables[ti].id; g.seatIndex = si; si++;
+    justPlacedIds.add(g.id);
     if(si>=6){ si=0; ti++; }
   }
   render();
@@ -686,6 +702,13 @@ function autoArrange(){
 function resetSeating(){
   if(!confirm('確定要清空所有座位安排嗎？（賓客名單不會被刪除）')) return;
   guests.forEach(g=>{ g.tableId=null; g.seatIndex=null; });
+  render();
+}
+function deleteAllGuests(){
+  if(guests.length===0){ alert('目前沒有賓客資料'); return; }
+  if(!confirm('確定要刪除全部 '+guests.length+' 位賓客嗎？此動作無法復原！')) return;
+  guests = [];
+  selectedGuestId = null;
   render();
 }
 
@@ -848,6 +871,7 @@ function render(){
   renderTables();
   renderLegend();
   scheduleSave();
+  justPlacedIds = new Set();
 }
 function renderLegend(){
   const cats = [['男方親友','groom'],['女方親友','bride'],['共同好友','both']];
@@ -897,8 +921,9 @@ function guestChipHTML(g){
 }
 function seatChipHTML(g){
   const sel = selectedGuestId===g.id ? 'selected' : '';
+  const jelly = justPlacedIds.has(g.id) ? ' jelly-pop' : '';
   const c = mealColor(g.meal);
-  return '<div class="seat-chip '+categoryClass(g.category)+' '+sel+'" draggable="true" '+
+  return '<div class="seat-chip '+categoryClass(g.category)+' '+sel+jelly+'" draggable="true" '+
     'ondragstart="onChipDragStart(event,\''+g.id+'\')" onclick="event.stopPropagation(); onChipClick(\''+g.id+'\')">'+
     '<div class="seat-badge" style="border-color:'+c+'">'+mealIcon(g.meal,17)+'</div>'+
     '<span class="seat-name">'+escapeHTML(g.name)+'</span>'+
@@ -919,10 +944,12 @@ function seatCellHTML(t,i){
   return '<div class="seat empty" onclick="onSeatClick(\''+t.id+'\','+i+')" ondragover="event.preventDefault()" ondrop="onSeatDrop(event,\''+t.id+'\','+i+')"><span>＋</span></div>';
 }
 function landmarkHTML(l){
-  return '<div class="landmark" id="landmark-'+l.id+'" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
+  const locked = !!l.locked;
+  return '<div class="landmark'+(locked?' locked':'')+'" id="landmark-'+l.id+'" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
     '<img src="'+l.url+'" alt="" draggable="false" onpointerdown="onLandmarkPointerDown(event,\''+l.id+'\')" />'+
+    '<span class="landmark-lock" onclick="toggleLandmarkLock(\''+l.id+'\')" title="'+(locked?'解鎖位置':'鎖定位置')+'">'+(locked?'🔒':'🔓')+'</span>'+
     '<span class="landmark-del" onclick="onDeleteLandmark(\''+l.id+'\')" title="刪除參照物">✕</span>'+
-    '<span class="landmark-resize" onpointerdown="onLandmarkResizeStart(event,\''+l.id+'\')" title="拖曳調整大小">⤡</span>'+
+    (locked ? '' : '<span class="landmark-resize" onpointerdown="onLandmarkResizeStart(event,\''+l.id+'\')" title="拖曳調整大小">⤡</span>')+
     '<span class="landmark-label" onclick="renameLandmark(\''+l.id+'\')" title="點選重新命名">'+escapeHTML(l.name||'參照物')+'</span>'+
   '</div>';
 }
@@ -958,7 +985,7 @@ function onLandmarkPointerDown(e, id){
   const canvas = document.getElementById('canvas');
   const rect = canvas.getBoundingClientRect();
   const l = landmarks.find(x=>x.id===id);
-  if(!l) return;
+  if(!l || l.locked) return;
   landmarkDragState = { id, offsetX: (e.clientX-rect.left)/zoom - l.x, offsetY: (e.clientY-rect.top)/zoom - l.y, snappedX:null, snappedY:null };
   document.addEventListener('pointermove', onLandmarkPointerMove);
   document.addEventListener('pointerup', onLandmarkPointerUp);
@@ -1003,7 +1030,7 @@ let landmarkResizeState = null;
 function onLandmarkResizeStart(e, id){
   e.preventDefault(); e.stopPropagation();
   const l = landmarks.find(x=>x.id===id);
-  if(!l) return;
+  if(!l || l.locked) return;
   landmarkResizeState = { id, startX:e.clientX, startY:e.clientY, w0:l.w, h0:l.h };
   document.addEventListener('pointermove', onLandmarkResizeMove);
   document.addEventListener('pointerup', onLandmarkResizeEnd);
@@ -1038,6 +1065,12 @@ function renameLandmark(id){
 function onDeleteLandmark(id){
   if(!confirm('確定要刪除這個參照物嗎？')) return;
   landmarks = landmarks.filter(x=>x.id!==id);
+  render();
+}
+function toggleLandmarkLock(id){
+  const l = landmarks.find(x=>x.id===id);
+  if(!l) return;
+  l.locked = !l.locked;
   render();
 }
 async function handleLandmarkUpload(file){
