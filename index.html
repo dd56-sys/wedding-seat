@@ -23,7 +23,7 @@
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
 
   .header{padding:22px 20px 14px;text-align:center;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);}
-  .header h1{font-size:22px;letter-spacing:1.5px;}
+  .header h1{font-size:18px;letter-spacing:1.5px;}
   .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
   .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
 
@@ -86,7 +86,7 @@
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
     /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
-    animation:seatPopIn 1s 2s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
+    animation:seatPopIn 1s 1.5s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
     z-index: 6;
     margin: -12px;
     bottom: 13px;
@@ -116,7 +116,7 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn 1s 2s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
+      seatPopIn 1s 1.5s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
       /*seatBorderFlow 2.4s linear infinite;*/
     z-index:6;
   }
@@ -200,9 +200,9 @@
 <div class="wrap">
   <div class="header">
     <h1>HsiEn & LeeHsin</h1>
-    <h1>婚宴座位查詢</h1>
+    <h1></h1>
     <div class="rule"></div>
-    <p>請輸入您的姓名，查詢座位</p>
+    <p>婚宴座位查詢</p>
   </div>
 
   <div class="search-area">
@@ -367,7 +367,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 3.2s cubic-bezier(.2,.8,.2,1)' : 'none';
+  world.style.transition = animate ? 'transform 2.2s cubic-bezier(.2,.8,.2,1)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
