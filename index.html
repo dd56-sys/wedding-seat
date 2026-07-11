@@ -115,9 +115,9 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn .65s cubic-bezier(.34,1.56,.64,1) both,
-      seatBorderFlow 2.4s linear infinite;
-    z-index:8;
+      seatPopIn 1.65s 1s cubic-bezier(.34,1.56,.64,1) both,
+      /*seatBorderFlow 2.4s linear infinite;*/
+    z-index:6;
   }
   .pseat.match::before{
     content:"";
@@ -155,15 +155,11 @@
     100%{ transform:scale(1.35); opacity:0; }
   }
   @keyframes seatPopIn{
-
-
     0%{ opacity:0; transform:scale(.3) rotate(-10deg); }
     50%{ opacity:1; transform:scale(1.2) rotate(4deg); }
     70%{ transform:scale(.92) rotate(-2deg); }
     100%{ opacity:1; transform:scale(1) rotate(0deg); }
   }
-
-
   @keyframes pulseSeat{
     0%,100%{box-shadow:0 0 3px 1px var(--mc,var(--gold));}
     50%{box-shadow:0 0 8px 3px var(--mc,var(--gold));}
