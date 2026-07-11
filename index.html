@@ -85,7 +85,7 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    animation: textPopUpTop 1.3s 1s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;
+    animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;
     z-index: 6;
     margin: -12px;
     bottom: 13px;
@@ -95,8 +95,8 @@
     100%{ background-position: 0 0, 0 100%; }
   }
   @keyframes textPopUpTop{
-    0%{ opacity:0; transform: translateY(18px) scale(.55); }
-    55%{ opacity:1; transform: translateY(-9px) scale(1.2); }
+    0%{ opacity:0; transform: translateY(9px) scale(.55); }
+    55%{ opacity:1; transform: translateY(-4.5px) scale(1.2); }
     78%{ transform: translateY(2px) scale(.94); }
     100%{ opacity:1; transform: translateY(0) scale(1); }
   }
@@ -304,8 +304,8 @@ function pseatCellHTML(t, i){
       '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal,23)+'</div>'+
       '<span class="pseat-name">'+escapeHTML(occ.name)+'</span>'+
       '<span class="pseat-sparkle s1">✨</span>'+
-      '<span class="pseat-sparkle s2">✨</span>'+
-      '<span class="pseat-sparkle s3">✨</span>'+
+      '<span class="pseat-sparkle s2">❤️</span>'+
+      '<span class="pseat-sparkle s3">🎉</span>'+
     '</div>';
   }
   return '<div class="pseat filled"></div>';
