@@ -114,19 +114,16 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn .65s cubic-bezier(.34,1.56,.64,1) both,
+      seatPopIn 1.65s 1s cubic-bezier(.34,1.56,.64,1) both,
       seatBorderFlow 2.4s linear infinite;
     z-index:8;
   }
   .pseat.match::before{
     content:"";
     position:absolute;
-    top:0; left:-60%;
-    width:35%; height:100%;
-    background:linear-gradient(115deg, transparent, rgba(255,255,255,.9), transparent);
-    clip-path:inset(0 round 7px);
-    animation:seatShine 2.6s ease-in-out infinite;
-    animation-delay:.7s;
+    inset:0;
+    border-radius:7px;
+    box-shadow: inset 0 0 10px rgba(255,255,255,.5);
     pointer-events:none;
   }
   .pseat.match::after{
@@ -139,6 +136,16 @@
     animation-delay:.35s;
     pointer-events:none;
   }
+  .pseat-sparkle{position:absolute;font-size:12px;line-height:1;pointer-events:none;
+    filter:drop-shadow(0 0 3px rgba(255,255,255,.9));animation:sparkleTwinkle 1.6s ease-in-out infinite;}
+  .pseat-sparkle.s1{top:-9px;left:-9px;animation-delay:0s;}
+  .pseat-sparkle.s2{top:-7px;right:-10px;animation-delay:.55s;}
+  .pseat-sparkle.s3{bottom:-10px;left:30px;animation-delay:1.1s;}
+  @keyframes sparkleTwinkle{
+    0%,100%{opacity:0;transform:scale(.3) rotate(0deg);}
+    50%{opacity:1;transform:scale(1.25) rotate(25deg);}
+  }
+
   @keyframes seatBorderFlow{
     0%{ background-position:0 0, 0% 0; }
     100%{ background-position:0 0, 300% 0; }
@@ -298,6 +305,9 @@ function pseatCellHTML(t, i){
     return '<div class="pseat filled match" style="--mc:'+c+'">'+
       '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal,23)+'</div>'+
       '<span class="pseat-name">'+escapeHTML(occ.name)+'</span>'+
+      '<span class="pseat-sparkle s1">✨</span>'+
+      '<span class="pseat-sparkle s2">✨</span>'+
+      '<span class="pseat-sparkle s3">✨</span>'+
     '</div>';
   }
   return '<div class="pseat filled"></div>';
