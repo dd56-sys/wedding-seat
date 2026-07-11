@@ -55,6 +55,8 @@
   .btn-primary:hover{background:var(--gold);border-color:var(--gold);color:#fff;}
   .btn-gold{background:var(--gold);color:#fff;border-color:var(--gold);}
   .btn-gold:hover{background:#a17f4a;}
+  .btn-danger{background:#fff;color:var(--danger);border-color:var(--danger);}
+  .btn-danger:hover{background:var(--danger);color:#fff;}
   .btn-block{width:100%;}
   .btn-sm{padding:6px 10px;font-size:12px;}
   .row-2{display:flex;gap:8px;}
@@ -387,6 +389,7 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
         <button class="btn btn-sm btn-block" onclick="resetSeating()">清空所有座位</button>
         <button class="btn btn-sm btn-block" onclick="exportSeatingCSV()">匯出座位表</button>
       </div>
+        <button class="btn btn-sm btn-block btn-danger" style="margin-top:8px;" onclick="deleteAllGuests()">🗑 一鍵刪除全部賓客名單</button>
     </div>
 
   </div>
@@ -424,6 +427,7 @@ let tables = [];
 let landmarks = [];
 let guestSeq = 1, tableSeq = 1, landmarkSeq = 1;
 let selectedGuestId = null;
+let justPlacedIds = new Set();
 let filterCategory = 'all';
 let searchTerm = '';
 let zoom = 1;
@@ -534,8 +538,10 @@ function assign(guestId, tableId, seatIndex){
   if(occupant && occupant.id !== guestId){
     occupant.tableId = (oldTableId!=null) ? oldTableId : null;
     occupant.seatIndex = (oldTableId!=null) ? oldSeatIndex : null;
+    if(occupant.tableId!=null) justPlacedIds.add(occupant.id);
   }
   g.tableId = tableId; g.seatIndex = seatIndex;
+  justPlacedIds.add(guestId);
 }
 function onSeatClick(tableId, seatIndex){
   if(selectedGuestId){ assign(selectedGuestId, tableId, seatIndex); selectedGuestId=null; render(); }
@@ -871,7 +877,24 @@ function render(){
   renderTables();
   renderLegend();
   scheduleSave();
+  playJellyEffect(Array.from(justPlacedIds));
   justPlacedIds = new Set();
+}
+function playJellyEffect(ids){
+  if(!ids || ids.length===0) return;
+  // 用兩層 requestAnimationFrame 延到瀏覽器完成拖放手勢後的下一個畫面更新，
+  // 原生 HTML5 拖放事件中直接觸發的 CSS 動畫在部分瀏覽器會被吃掉不播放。
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      ids.forEach(id=>{
+        const el = document.getElementById('seatchip-'+id);
+        if(!el) return;
+        el.classList.remove('jelly-pop');
+        void el.offsetWidth; // 強制重新計算，確保動畫可以重新播放
+        el.classList.add('jelly-pop');
+      });
+    });
+  });
 }
 function renderLegend(){
   const cats = [['男方親友','groom'],['女方親友','bride'],['共同好友','both']];
