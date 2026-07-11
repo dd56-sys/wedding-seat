@@ -105,11 +105,59 @@
   .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
   .pseat{width:74px;height:56px;border-radius:6px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
   .pseat.filled{background:#EFE9DC;}
-  .pseat.match{border-color:var(--mc,var(--gold));box-shadow:0 0 0 3px var(--mc,var(--gold));
-    animation:pulseSeat 1.6s ease-in-out infinite;}
-  @keyframes pulseSeat{
-    0%,100%{box-shadow:0 0 3px 1px var(--mc,var(--gold));}
-    50%{box-shadow:0 0 8px 3px var(--mc,var(--gold));}
+  .pseat.match{
+    border:2.5px solid transparent;
+    border-radius:7px;
+    background:
+      linear-gradient(#fff,#fff) padding-box,
+      linear-gradient(90deg, var(--mc,var(--gold)), #fff6e0, var(--mc,var(--gold)), #fff6e0, var(--mc,var(--gold))) border-box;
+    background-size: 100% 100%, 300% 100%;
+    box-shadow:0 5px 16px rgba(0,0,0,.2);
+    animation:
+      seatPopIn .65s cubic-bezier(.34,1.56,.64,1) both,
+      seatBorderFlow 2.4s linear infinite;
+    z-index:8;
+  }
+  .pseat.match::before{
+    content:"";
+    position:absolute;
+    top:0; left:-60%;
+    width:35%; height:100%;
+    background:linear-gradient(115deg, transparent, rgba(255,255,255,.9), transparent);
+    clip-path:inset(0 round 7px);
+    animation:seatShine 2.6s ease-in-out infinite;
+    animation-delay:.7s;
+    pointer-events:none;
+  }
+  .pseat.match::after{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius:9px;
+    border:2px solid var(--mc,var(--gold));
+    animation:seatRipple 1.8s ease-out infinite;
+    animation-delay:.35s;
+    pointer-events:none;
+  }
+  @keyframes seatBorderFlow{
+    0%{ background-position:0 0, 0% 0; }
+    100%{ background-position:0 0, 300% 0; }
+  }
+  @keyframes seatShine{
+
+
+    0%{ left:-60%; }
+    100%{ left:130%; }
+  }
+  @keyframes seatRipple{
+    0%{ transform:scale(1); opacity:.85; }
+    100%{ transform:scale(1.35); opacity:0; }
+  }
+  @keyframes seatPopIn{
+    0%{ opacity:0; transform:scale(.3) rotate(-10deg); }
+    50%{ opacity:1; transform:scale(1.2) rotate(4deg); }
+    70%{ transform:scale(.92) rotate(-2deg); }
+    100%{ opacity:1; transform:scale(1) rotate(0deg); }
   }
   .pseat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
@@ -122,7 +170,7 @@
   .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:8px;}
   .result-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--line);justify-content: space-evenly;}
   .result-row:first-of-type{border-top:none;}
-  .result-row .rname{font-weight:700;flex:0.8;font-size:18px;}
+  .result-row .rname{font-weight:700;flex:0.8;font-size:18px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .result-row .ricon{width:25px;height:25px;flex:none;}
   .result-row .rmeal{font-size:18px;color:var(--ink-soft);}
   .result-row .rloc{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
@@ -190,7 +238,7 @@ function mealIcon(meal, size){
   const px = size || 16;
   const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'👶','素食':'🌳','嬰兒':'🍼'};
   const e = map[meal] || '🍽️';
-  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;">'+e+'</span>';
+  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;">'+e+'</span>';
 }
 function escapeHTML(s){
   return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -486,13 +534,14 @@ function runSearch(baseName){
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
       '<span class="rname">'+escapeHTML(g.name)+'</span>'+
-      '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
+      '<span class="ricon">'+mealIcon(g.meal,16)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
     '</div>';
   }).join('');
   resultPanel.innerHTML = '<div class="result-card"><div class="result-title">找到 '+matched.length+' 位「'+escapeHTML(baseName)+'」</div>'+rowsHTML+'</div>'+
     '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
+  fitTextToWidth(resultPanel.querySelectorAll('.rname'), 10);
 
   if(seatedTables.size>0){
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
