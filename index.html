@@ -399,7 +399,7 @@ function focusOn(bounds, immediate){
     applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-  }, 400);
+  }, 350);
 }
 function recenter(){
   if(!lastFocusBounds) return;
