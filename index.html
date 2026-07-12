@@ -369,7 +369,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 1.7s cubic-bezier(.2,.8,.2,1)' : 'none';
+  world.style.transition = animate ? 'transform 0.8s cubic-bezier(.34,1.56,.64,1)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
@@ -393,12 +393,13 @@ function focusOn(bounds, immediate){
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
+  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
   setTimeout(()=>{
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
     applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-  }, 250);
+  }, 400);
 }
 function recenter(){
   if(!lastFocusBounds) return;
