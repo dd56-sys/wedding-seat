@@ -398,7 +398,7 @@ function focusOn(bounds, immediate){
     applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-  }, 550);
+  }, 250);
 }
 function recenter(){
   if(!lastFocusBounds) return;
