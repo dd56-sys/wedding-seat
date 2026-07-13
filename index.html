@@ -86,8 +86,9 @@
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
     /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
-    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
-    z-index: 6;
+    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite seatGlow 1.8s ease-in-out infinite;
+;
+    z-index: 8;
     margin: -12px;
     bottom: 10px;
   }
@@ -398,7 +399,7 @@ let currentT = {scale:1, tx:0, ty:0};
 const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
 /* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
-const ZOOM_DELAY_MS = 500;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
+const ZOOM_DELAY_MS = 700;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
 const ZOOM_DURATION_MS = 1300;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
 const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
 const RACK_FOCUS_BLUR = 5;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
