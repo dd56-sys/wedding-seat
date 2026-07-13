@@ -189,7 +189,7 @@
 
   /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 */
   .focus-frame{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;pointer-events:none;z-index:15;
-    animation:focusHunt .75s cubic-bezier(.2,.8,.2,1) both;}
+    animation:focusHunt 1s cubic-bezier(.2,.8,.2,1) both;}
   .focus-frame .corner{position:absolute;width:16px;height:16px;border-color:var(--pc,var(--gold));border-style:solid;border-width:0;}
   .focus-frame .c-tl{top:0;left:0;border-top-width:2.5px;border-left-width:2.5px;}
   .focus-frame .c-tr{top:0;right:0;border-top-width:2.5px;border-right-width:2.5px;}
@@ -202,13 +202,13 @@
     100%{ transform:scale(1); opacity:1; }
   }
 
-  /* 電影黑邊：拉近的瞬間從上下滑入，安頓後再收回 */
+  /* 電影黑邊：拉近的瞬間從上下滑入，安頓後再收回 
   .cine-bar{position:absolute;left:0;right:0;height:13%;background:#0c0a08;z-index:50;pointer-events:none;
     transform:scaleY(0);transition:transform 1s cubic-bezier(.4,0,.2,1);}
   .cine-bar.top{top:0;transform-origin:top;}
   .cine-bar.bottom{bottom:0;transform-origin:bottom;}
   .stage-viewport.cinematic .cine-bar{transform:scaleY(1);}
-  .stage-viewport.cinematic{box-shadow:inset 0 0 40px rgba(0,0,0,.35);}
+  .stage-viewport.cinematic{box-shadow:inset 0 0 40px rgba(0,0,0,.35);}*/
 
   /* 底片顆粒：拉近過程中疊一層淡淡的雜訊顆粒，模擬類比膠卷質感 */
   .film-grain{position:absolute;inset:-20px;z-index:45;pointer-events:none;opacity:0;
@@ -433,7 +433,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 const ZOOM_DELAY_MS = 800;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
 const ZOOM_DURATION_MS = 1900;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
 const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
-const RACK_FOCUS_BLUR = 5;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
+const RACK_FOCUS_BLUR = 1;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
 
 function applyTransform(t, animate, blurPx){
   currentT = t;
