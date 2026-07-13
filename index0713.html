@@ -23,21 +23,21 @@
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
 
   .header{padding:22px 20px 14px;text-align:center;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);}
-  .header h1{font-size:20px;letter-spacing:1.5px;}
+  .header h1{font-size:18px;letter-spacing:1.5px;}
   .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-  .header p{margin:0;font-size:12.5px;color:var(--ink-soft);letter-spacing:.5px;}
+  .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
 
   .search-area{padding:16px 18px;position:relative;z-index:30;}
   .suggest-overlay{position:fixed;inset:0;background:rgba(20,16,12,.45);z-index:25;opacity:0;pointer-events:none;transition:opacity .2s ease;}
   .suggest-overlay.show{opacity:1;pointer-events:auto;}
   .search-box{position:relative;}
-  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
+  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-align: center;}
   .search-input:focus{outline:none;border-color:var(--gold);}
-  .search-hint{font-size:11.5px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
+  .search-hint{font-size:16px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
 
   .suggest-list{position:absolute;left:18px;right:18px;top:56px;background:#fff;border:1px solid var(--line);
     border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
-  .suggest-item{padding:12px 16px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line);}
+  .suggest-item{padding:12px 16px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line);text-align: center;}
   .suggest-item:last-child{border-bottom:none;}
   .suggest-item:active{background:var(--gold-light);}
   .suggest-empty{padding:14px 16px;font-size:13px;color:var(--ink-soft);text-align:center;}
@@ -55,48 +55,72 @@
   .plandmark{position:absolute;z-index:1;}
   .plandmark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
   .plandmark-label{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:700;
-    background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);}
-  .ptable-topbar{display:flex;justify-content:center;padding-bottom:2px;}
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);display: none;}
+  .ptable-topbar{display:none;justify-content:center;padding-bottom:2px;}
   .ptable-no{font-family:'Noto Serif TC',serif;font-size:11px;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .plabel-row{display:flex;justify-content:center;overflow:visible;}
   .plabel{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);background:#fff;
     border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;position:relative;}
   .plabel.matched{
-    border:2.5px solid transparent;
-    padding:3px 13px;
+    /*border:2.5px solid transparent;
+    padding:5px 16px;
     font-size:14.5px;
-    color:var(--ink);
+    color:#ff6a00eb;
     background:
-      linear-gradient(#fff,#fff) padding-box,
-      linear-gradient(90deg,#B8935A,#C4453B,#3F8F5C,#2E6DA4,#B8935A) border-box;
+    linear-gradient(#fff, #fff) padding-box, linear-gradient(
+    90deg, #ffffff, #ff6a00, #ffffff, #ff6a00, #ffffff) border-box;
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 3px 12px rgba(184,147,90,.4);
-    animation: textPopUpTop .65s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
-    z-index:6;
+    animation: textPopUpTop 1.8s cubic-bezier(.34,1.56,.64,1.2) both, plabelBorderFlow 5.2s linear infinite;
+    z-index:6;*/
+    border: 2.5px solid transparent;
+    border-radius: 99em;
+    padding: 5px 20px;
+    font-size: 24px;
+    color: #E99729;
+    background:
+        linear-gradient(#fff, #fff) padding-box, 
+        /* 【關鍵1】明確寫出 0%, 25%, 50%, 75%, 100%，確保顏色對稱分布 */
+        linear-gradient(180deg, #ffffff 0%, #E99729 25%, #ffffff 50%, #E99729 75%, #ffffff 100%) border-box; 
+    /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
+    background-size: 100% 100%, 100% 200%; 
+    box-shadow: 0 3px 12px rgba(184,147,90,.4);
+    /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
+    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
+    z-index: 6;
+    margin: -12px;
+    bottom: 10px;
   }
   @keyframes plabelBorderFlow{
     0%{ background-position: 0 0, 0% 0; }
-    100%{ background-position: 0 0, 300% 0; }
+    100%{ background-position: 0 0, 0 100%; }
   }
   @keyframes textPopUpTop{
-    0%{ opacity:0; transform: translateY(18px) scale(.55); }
-    55%{ opacity:1; transform: translateY(-9px) scale(1.2); }
+    0%{ opacity:0; transform: translateY(9px) scale(.55); }
+    55%{ opacity:1; transform: translateY(-4.5px) scale(1.2); }
     78%{ transform: translateY(2px) scale(.94); }
     100%{ opacity:1; transform: translateY(0) scale(1); }
   }
   .prow{display:flex;gap:6px;justify-content:center;overflow:visible;}
-  .prow.top{margin-top:18px;}
+  .prow.top{margin-top:25px;}
   .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
   .pseat{width:74px;height:56px;border-radius:6px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
   .pseat.filled{background:#EFE9DC;}
+
   .pseat.match{
-    border:2px solid var(--mc,var(--gold));
+    border:2px solid transparent;
     border-radius:7px;
-    background:#fff;
+    /*background:
+      linear-gradient(#fff,#fff) padding-box,
+      linear-gradient(90deg, var(--mc,var(--gold)), #fff6e0, var(--mc,var(--gold)), #fff6e0, var(--mc,var(--gold))) border-box;*/
+    background: linear-gradient(#fff,#fff) padding-box;
+    border-color: var(--mc);
+    background-size: 100% 100%, 300% 100%;
+    box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn .65s cubic-bezier(.34,1.56,.64,1) both,
-      seatGlow 1.8s ease-in-out infinite;
-    z-index:8;
+      seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
+      /*seatBorderFlow 2.4s linear infinite;*/
+    z-index:6;
   }
   .pseat.match::before{
     content:"";
@@ -111,7 +135,7 @@
     position:absolute;
     inset:-2px;
     border-radius:9px;
-    border:2px solid var(--mc,var(--gold));
+    border:1px solid var(--mc,var(--gold));
     animation:seatRipple 1.8s ease-out infinite;
     animation-delay:.35s;
     pointer-events:none;
@@ -125,34 +149,39 @@
     0%,100%{opacity:0;transform:scale(.3) rotate(0deg);}
     50%{opacity:1;transform:scale(1.25) rotate(25deg);}
   }
-  @keyframes seatGlow{
-    0%,100%{ box-shadow: 0 0 8px 1px var(--mc,var(--gold)), 0 5px 16px rgba(0,0,0,.2); }
-    50%{ box-shadow: 0 0 22px 6px var(--mc,var(--gold)), 0 5px 16px rgba(0,0,0,.2); }
+  @keyframes seatBorderFlow{
+    0%{ background-position:0 0, 0% 0; }
+    100%{ background-position:0 0, 300% 0; }
   }
   @keyframes seatRipple{
     0%{ transform:scale(1); opacity:.85; }
     100%{ transform:scale(1.35); opacity:0; }
   }
   @keyframes seatPopIn{
-    0%{ opacity:0; transform:scale(.3) rotate(-10deg); }
-    50%{ opacity:1; transform:scale(1.2) rotate(4deg); }
-    70%{ transform:scale(.92) rotate(-2deg); }
+    0%{ opacity:0.8; transform:scale(1) rotate(0deg); }
+    50%{ opacity:1; transform:scale(1) rotate(0deg); }
+    70%{ transform:scale(1.1) rotate(0deg); }
     100%{ opacity:1; transform:scale(1) rotate(0deg); }
+  }
+  @keyframes pulseSeat{
+    0%,100%{box-shadow:0 0 3px 1px var(--mc,var(--gold));}
+    50%{box-shadow:0 0 8px 3px var(--mc,var(--gold));}
   }
   .pseat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
-  .pseat-name{position:absolute;left:0;right:0;bottom:5px;text-align:center;font-size:11px;font-weight:700;
+  /*.pseat-badge svg{width:27px;height:27px;display:block;}*/
+  .pseat-name{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:15px;font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
 
   .result-panel{padding:14px 4px 4px;}
   .result-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
   .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:8px;}
-  .result-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--line);}
+  .result-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--line);justify-content: space-evenly;}
   .result-row:first-of-type{border-top:none;}
-  .result-row .ricon{width:20px;height:20px;flex:none;display:flex;align-items:center;justify-content:center;}
-  .result-row .rname{font-weight:700;flex:1;font-size:14px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .result-row .rmeal{font-size:12px;color:var(--ink-soft);}
-  .result-row .rloc{font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap;}
+  .result-row .rname{font-weight:700;flex:0.8;font-size:18px;}
+  .result-row .ricon{width:25px;height:25px;flex:none;}
+  .result-row .rmeal{font-size:18px;color:var(--ink-soft);}
+  .result-row .rloc{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
   .result-row.unassigned .rloc{color:var(--danger);}
   .reset-btn{display:block;width:100%;margin:12px 0 4px;padding:12px;font-size:14px;font-weight:700;
     color:#fff;background:var(--ink);border:1px solid var(--ink);border-radius:10px;letter-spacing:1px;}
@@ -164,34 +193,6 @@
   .stage-zoom-hint{position:absolute;top:8px;right:10px;z-index:10;font-size:10.5px;color:var(--ink-soft);
     background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px;pointer-events:none;}
 
-  /* 定位雷達 ping：總覽階段標出目標所在位置 */
-  .locate-ping{position:absolute;width:0;height:0;pointer-events:none;z-index:15;}
-  .locate-ping .ring{position:absolute;top:0;left:0;width:26px;height:26px;margin:-13px 0 0 -13px;
-    border-radius:50%;border:2.5px solid var(--pc,var(--gold));animation:pingExpand 1.1s ease-out infinite;}
-  .locate-ping .r2{animation-delay:.55s;}
-  .locate-ping .dot{position:absolute;top:0;left:0;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
-    border-radius:50%;background:var(--pc,var(--gold));box-shadow:0 0 10px 2px var(--pc,var(--gold));}
-  @keyframes pingExpand{
-    0%{ transform:scale(.3); opacity:.9; }
-    100%{ transform:scale(3.2); opacity:0; }
-  }
-
-  /* 抵達時的衝擊波：螢幕座標，不受地圖縮放影響 */
-  .impact-burst{position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;
-    border-radius:50%;border:3px solid var(--pc,var(--gold));pointer-events:none;z-index:40;
-    animation:impactRing .65s ease-out forwards;}
-  @keyframes impactRing{
-    0%{ transform:scale(.4); opacity:1; }
-    100%{ transform:scale(10); opacity:0; }
-  }
-  .stage-viewport.shake{ animation: viewShake .26s ease-in-out; }
-  @keyframes viewShake{
-    0%,100%{ transform:translate(0,0); }
-    25%{ transform:translate(-4px,3px); }
-    50%{ transform:translate(4px,-3px); }
-    75%{ transform:translate(-2px,-1px); }
-  }
-
   .footer-note{text-align:center;font-size:11px;color:#b3a89a;padding:14px 20px 24px;}
 </style>
 </head>
@@ -200,9 +201,10 @@
 
 <div class="wrap">
   <div class="header">
-    <h1>婚宴座位查詢</h1>
+    <h1>HsiEn & LeeHsin</h1>
+    <h1></h1>
     <div class="rule"></div>
-    <p>請輸入您的姓名，查詢座位</p>
+    <p>婚宴座位查詢</p>
   </div>
 
   <div class="search-area">
@@ -210,7 +212,8 @@
       <input class="search-input" id="searchInput" placeholder="輸入姓名，例如：王小明" autocomplete="off" oninput="onSearchInput(this.value)" />
       <div class="suggest-list" id="suggestList" style="display:none;"></div>
     </div>
-    <div class="search-hint">輸入任一個字即可搜尋，同行賓客會一起顯示</div>
+    <div class="search-hint">輸入名字中任一字搜尋，同行賓客會一起顯示。</div>
+    <div class="search-hint">到達座位後，桌上會有您的姓名卡。</div>
   </div>
 
   <div class="stage-section">
@@ -218,12 +221,12 @@
       <div class="stage-world" id="stageWorld"></div>
       <div class="stage-placeholder" id="stagePlaceholder">正在載入座位圖...</div>
       <div class="stage-zoom-hint">可用手指縮放 / 拖曳查看</div>
-      <div class="stage-recenter" id="stageRecenter" onclick="recenter()" title="回到座位">◎</div>
+      <div class="stage-recenter" id="stageRecenter" onclick="recenter()" title="回到座位">⛶</div>
     </div>
     <div class="result-panel" id="resultPanel"></div>
   </div>
 
-  <div class="footer-note">座位如有異動請以現場公告為準</div>
+  <div class="footer-note"></div>
 </div>
 
 <script>
@@ -236,14 +239,14 @@ let worldBounds = {minX:0,minY:0,maxX:1200,maxY:800};
 
 /* ---------------- meal icons (shared style with admin) ---------------- */
 function mealColor(meal){
-  const map = {'牛肉':'#A8553F','鴨肉':'#C08A3E','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
+  const map = {'牛肉':'#A8553F','鴨肉':'#ffe000','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
   return map[meal] || '#B0A695';
 }
 function mealIcon(meal, size){
   const px = size || 16;
-  const map = {'牛肉':'🥩','鴨肉':'🍗','兒童餐':'🧒','素食':'🥗','嬰兒':'🍼'};
+  const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'👶','素食':'🌳','嬰兒':'🍼'};
   const e = map[meal] || '🍽️';
-  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;">'+e+'</span>';
+  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;">'+e+'</span>';
 }
 function escapeHTML(s){
   return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -301,11 +304,11 @@ function pseatCellHTML(t, i){
   if(isMatch){
     const c = mealColor(occ.meal);
     return '<div class="pseat filled match" style="--mc:'+c+'">'+
-      '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal,17)+'</div>'+
+      '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal,23)+'</div>'+
       '<span class="pseat-name">'+escapeHTML(occ.name)+'</span>'+
-      '<span class="pseat-sparkle s1">✨</span>'+
-      '<span class="pseat-sparkle s2">✨</span>'+
-      '<span class="pseat-sparkle s3">✨</span>'+
+      '<span class="pseat-sparkle s1"></span>'+
+      '<span class="pseat-sparkle s2"></span>'+
+      '<span class="pseat-sparkle s3"></span>'+
     '</div>';
   }
   return '<div class="pseat filled"></div>';
@@ -321,7 +324,7 @@ function ptableHTML(t){
     '<div class="prow top">'+top+'</div>'+
     '<div class="psurface"></div>'+
     '<div class="prow">'+bottom+'</div>'+
-    '<div class="plabel-row" style="margin-top:10px;"><span class="plabel'+(bottomMatch?' matched':'')+'">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
+    '<div class="plabel-row" style="margin-top:37px;"><span class="plabel'+(bottomMatch?' matched':'')+'">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
   '</div>';
 }
 function plandmarkHTML(l){
@@ -363,15 +366,10 @@ function computeTransform(bounds, viewportW, viewportH, marginFactor){
 let currentT = {scale:1, tx:0, ty:0};
 const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
-/* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
-const ZOOM_DELAY_MS = 700;       // 總覽停留多久才開始拉近（雷達定位動畫播放的時間）
-const ZOOM_DURATION_MS = 950;    // 拉近動畫時長
-const ZOOM_EASING = 'cubic-bezier(.28,1.55,.45,1)'; // 帶一點超衝再回彈的彈性曲線
-
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? ('transform '+(ZOOM_DURATION_MS/1000)+'s '+ZOOM_EASING) : 'none';
+  world.style.transition = animate ? 'transform 0.9s cubic-bezier(.5,.47,.3,.91)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
@@ -383,60 +381,25 @@ function readRenderedTransform(){
   }catch(err){ return currentT; }
 }
 
-/* ---- 定位雷達 ping（總覽階段，標出目標在整個會場的哪個位置）---- */
-let pingEl = null;
-function clearLocatingPing(){
-  if(pingEl && pingEl.parentNode) pingEl.parentNode.removeChild(pingEl);
-  pingEl = null;
-}
-function showLocatingPing(cx, cy, color){
-  clearLocatingPing();
-  const world = document.getElementById('stageWorld');
-  const el = document.createElement('div');
-  el.className = 'locate-ping';
-  el.style.left = cx+'px';
-  el.style.top = cy+'px';
-  el.style.setProperty('--pc', color || '#B8935A');
-  el.innerHTML = '<span class="ring r1"></span><span class="ring r2"></span><span class="dot"></span>';
-  world.appendChild(el);
-  pingEl = el;
-}
-
-/* ---- 抵達時的衝擊波 + 震動（螢幕座標，不受地圖縮放影響）---- */
-function showImpactBurst(color){
-  const vp = document.getElementById('stageViewport');
-  const el = document.createElement('div');
-  el.className = 'impact-burst';
-  el.style.setProperty('--pc', color || '#B8935A');
-  vp.appendChild(el);
-  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 700);
-  vp.classList.add('shake');
-  setTimeout(()=>vp.classList.remove('shake'), 260);
-}
-
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
-function focusOn(bounds, immediate, focusColor){
+function focusOn(bounds, immediate){
   const vp = document.getElementById('stageViewport');
   lastViewportW = vp.clientWidth;
   const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, 0.92);
   applyTransform(overviewT, false);
   void vp.offsetWidth; // force reflow
-  clearLocatingPing();
   if(immediate){
     lastFocusBounds = worldBounds; lastFocusMargin = 0.92;
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
-  const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
-  showLocatingPing(cx, cy, focusColor);
+  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
   setTimeout(()=>{
-    clearLocatingPing();
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
     applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-    setTimeout(()=>{ showImpactBurst(focusColor); }, ZOOM_DURATION_MS);
-  }, ZOOM_DELAY_MS);
+  }, 350);
 }
 function recenter(){
   if(!lastFocusBounds) return;
@@ -557,7 +520,7 @@ function resetSearch(){
   highlightSet = new Set();
   highlightLabelKeys = new Set();
   renderStageStatic();
-  focusOn(worldBounds, true);
+  focusOn(worldBounds);
 }
 
 function runSearch(baseName){
@@ -582,15 +545,14 @@ function runSearch(baseName){
     const t = seated ? tables.find(x=>x.id===g.tableId) : null;
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
-      '<span class="ricon">'+mealIcon(g.meal,16)+'</span>'+
       '<span class="rname">'+escapeHTML(g.name)+'</span>'+
+      '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
     '</div>';
   }).join('');
   resultPanel.innerHTML = '<div class="result-card"><div class="result-title">找到 '+matched.length+' 位「'+escapeHTML(baseName)+'」</div>'+rowsHTML+'</div>'+
     '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
-  fitTextToWidth(resultPanel.querySelectorAll('.rname'), 10);
 
   if(seatedTables.size>0){
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -599,10 +561,9 @@ function runSearch(baseName){
       minX=Math.min(minX,t.x-30); minY=Math.min(minY,t.y-30);
       maxX=Math.max(maxX,t.x+280); maxY=Math.max(maxY,t.y+270);
     });
-    const focusColor = mealColor(seatedMatched[0].meal);
-    focusOn({minX,minY,maxX,maxY}, false, focusColor);
+    focusOn({minX,minY,maxX,maxY});
   } else {
-    focusOn(worldBounds, true);
+    focusOn(worldBounds);
   }
 }
 
