@@ -189,8 +189,8 @@
 
   /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 */
   .focus-frame{position:absolute;width:124px;height:124px;margin:-32px 0 0 -32px;pointer-events:none;z-index:15;
-    animation:focusHunt 3s cubic-bezier(.2,.8,.2,1) both;}
-  .focus-frame .corner{position:absolute;width:46px;height:46px;border-color:#000;border-style:solid;border-width:0;}
+    animation:focusHunt 4s cubic-bezier(.2,.8,.2,1) both;}
+  .focus-frame .corner{position:absolute;width:46px;height:46px;border-color:#6C6C6C;border-style:solid;border-width:0;}
   .focus-frame .c-tl{top:0;left:0;border-top-width:7.5px;border-left-width:7.5px;}
   .focus-frame .c-tr{top:0;right:0;border-top-width:7.5px;border-right-width:7.5px;}
   .focus-frame .c-bl{bottom:0;left:0;border-bottom-width:7.5px;border-left-width:7.5px;}
@@ -519,7 +519,7 @@ function focusOn(bounds, immediate, focusColor, titleName, titleSub){
   setTimeout(()=>{
     clearFocusFrame();
     vp.classList.add('cinematic'); // 電影黑邊滑入 + 底片顆粒浮現
-    showLensFlare(ZOOM_DURATION_MS); // 光暈隨運鏡掃過畫面
+    //showLensFlare(ZOOM_DURATION_MS); // 光暈隨運鏡掃過畫面
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
     applyTransform(targetT, true, 0); // 運鏡拉近的同時，景深也一起慢慢對焦清晰
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
