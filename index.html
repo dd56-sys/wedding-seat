@@ -85,8 +85,10 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
-    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite seatGlow 1.8s ease-in-out infinite;
+    /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;
+    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite seatGlow 1.8s ease-in-out infinite;*/
+    animation: textPopUpTop .65s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
+
 ;
     z-index: 8;
     margin: -12px;
@@ -118,9 +120,11 @@
     border-color: var(--mc);
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
-    animation:
+    /*animation:
       seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
-      /*seatBorderFlow 2.4s linear infinite;*/
+      seatBorderFlow 2.4s linear infinite;*/
+    animation: textPopUpTop .65s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
+
     z-index:6;
   }
   .pseat.match::before{
