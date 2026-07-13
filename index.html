@@ -194,7 +194,7 @@
   .stage-zoom-hint{position:absolute;top:8px;right:10px;z-index:10;font-size:10.5px;color:var(--ink-soft);
     background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px;pointer-events:none;}
 
-    /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 */
+    /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 
   .focus-frame{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;pointer-events:none;z-index:15;
     animation:focusHunt .75s cubic-bezier(.2,.8,.2,1) both;}
   .focus-frame .corner{position:absolute;width:16px;height:16px;border-color:var(--pc,var(--gold));border-style:solid;border-width:0;}
@@ -207,7 +207,7 @@
     45%{ transform:scale(.82); opacity:1; }
     75%{ transform:scale(1.08); }
     100%{ transform:scale(1); opacity:.8; }
-  }
+  }*/
 
   /* 電影黑邊：拉近的瞬間從上下滑入，安頓後再收回 */
   .cine-bar{position:absolute;left:0;right:0;height:10%;background:#fff;z-index:50;pointer-events:none;
@@ -422,7 +422,7 @@ function clearFocusFrame(){
   focusFrameEl = null;
 }
 
-/* 
+
 function showFocusFrame(cx, cy, color){
   clearFocusFrame();
   const world = document.getElementById('stageWorld');
@@ -436,7 +436,6 @@ function showFocusFrame(cx, cy, color){
   world.appendChild(el);
   focusFrameEl = el;
 }
-*/
 
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
 function focusOn(bounds, immediate, focusColor){
