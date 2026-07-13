@@ -421,6 +421,8 @@ function clearFocusFrame(){
   if(focusFrameEl && focusFrameEl.parentNode) focusFrameEl.parentNode.removeChild(focusFrameEl);
   focusFrameEl = null;
 }
+
+/* 
 function showFocusFrame(cx, cy, color){
   clearFocusFrame();
   const world = document.getElementById('stageWorld');
@@ -434,7 +436,7 @@ function showFocusFrame(cx, cy, color){
   world.appendChild(el);
   focusFrameEl = el;
 }
-
+*/
 
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
 function focusOn(bounds, immediate, focusColor){
