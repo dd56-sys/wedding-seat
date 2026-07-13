@@ -74,7 +74,7 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
+    animation:seatPopIn 1.5s 2s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
     z-index: 6;
     margin: -12px;
     bottom: 10px;
@@ -106,7 +106,7 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
+      seatPopIn 1.5s 2s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
       /*seatBorderFlow 2.4s linear infinite;*/
     z-index:8;
   }
@@ -241,7 +241,7 @@
     100%{ opacity:0; left:118%; top:2%; }
   }
 
-  /* 開場字卡：抵達後淡入顯示賓客姓名，像電影角色登場字幕 */
+  /* 開場字卡：抵達後淡入顯示賓客姓名，像電影角色登場字幕 
   .title-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-42%);text-align:center;
     z-index:48;pointer-events:none;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.65);opacity:0;
     animation:titleCardShow 2.8s ease-in-out forwards;}
@@ -253,7 +253,7 @@
     18%{ opacity:1; transform:translate(-50%,-42%); }
     78%{ opacity:1; }
     100%{ opacity:0; transform:translate(-50%,-46%); }
-  }
+  }*/
 
 
   .footer-note{text-align:center;font-size:11px;color:#b3a89a;padding:14px 20px 24px;}
