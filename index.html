@@ -430,10 +430,10 @@ let currentT = {scale:1, tx:0, ty:0};
 const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
 /* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
-const ZOOM_DELAY_MS = 800;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
+const ZOOM_DELAY_MS = 1000;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
 const ZOOM_DURATION_MS = 1900;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
 const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
-const RACK_FOCUS_BLUR = 3;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
+const RACK_FOCUS_BLUR = 2;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
 
 function applyTransform(t, animate, blurPx){
   currentT = t;
