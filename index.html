@@ -86,7 +86,7 @@
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
     /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
-    animation:seatPopIn 1.5s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
+    animation:seatPopIn 1.5s .4s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
     z-index: 6;
     margin: -12px;
     bottom: 10px;
@@ -118,7 +118,7 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn 1.5s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
+      seatPopIn 1.5s .4s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
       /*seatBorderFlow 2.4s linear infinite;*/
     z-index:6;
   }
@@ -369,7 +369,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 0.8s cubic-bezier(.55,-0.01,.22,1.72)' : 'none';
+  world.style.transition = animate ? 'transform 1.2s cubic-bezier(.55,-0.01,.22,1.72)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
