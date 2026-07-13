@@ -86,7 +86,7 @@
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
     /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
-    animation:seatPopIn 1.5s 1.3s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
+    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
     z-index: 6;
     margin: -12px;
     bottom: 10px;
@@ -118,8 +118,7 @@
     background-size: 100% 100%, 300% 100%;
     box-shadow:0 5px 16px rgba(0,0,0,.2);
     animation:
-      seatPopIn 1.5s 1.3s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
-
+      seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
       /*seatBorderFlow 2.4s linear infinite;*/
     z-index:6;
   }
@@ -194,29 +193,6 @@
   .stage-zoom-hint{position:absolute;top:8px;right:10px;z-index:10;font-size:10.5px;color:var(--ink-soft);
     background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px;pointer-events:none;}
 
-    /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 
-  .focus-frame{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;pointer-events:none;z-index:15;
-    animation:focusHunt .75s cubic-bezier(.2,.8,.2,1) both;}
-  .focus-frame .corner{position:absolute;width:16px;height:16px;border-color:var(--pc,var(--gold));border-style:solid;border-width:0;}
-  .focus-frame .c-tl{top:0;left:0;border-top-width:2.5px;border-left-width:2.5px;}
-  .focus-frame .c-tr{top:0;right:0;border-top-width:2.5px;border-right-width:2.5px;}
-  .focus-frame .c-bl{bottom:0;left:0;border-bottom-width:2.5px;border-left-width:2.5px;}
-  .focus-frame .c-br{bottom:0;right:0;border-bottom-width:2.5px;border-right-width:2.5px;}
-  @keyframes focusHunt{
-    0%{ transform:scale(1.7); opacity:0; }
-    45%{ transform:scale(.82); opacity:1; }
-    75%{ transform:scale(1.08); }
-    100%{ transform:scale(1); opacity:.8; }
-  }*/
-
-  /* 電影黑邊：拉近的瞬間從上下滑入，安頓後再收回 */
-  .cine-bar{position:absolute;left:0;right:0;height:10%;background:#fff;z-index:50;pointer-events:none;
-    transform:scaleY(0);transition:transform 1s cubic-bezier(.4,0,.2,1);}
-  .cine-bar.top{top:0;transform-origin:top;}
-  .cine-bar.bottom{bottom:0;transform-origin:bottom;}
-  .stage-viewport.cinematic .cine-bar{transform:scaleY(1);}
-  .stage-viewport.cinematic{box-shadow:inset 0 0 40px rgba(0,0,0,.35);}
-
   .footer-note{text-align:center;font-size:11px;color:#b3a89a;padding:14px 20px 24px;}
 </style>
 </head>
@@ -246,8 +222,6 @@
       <div class="stage-placeholder" id="stagePlaceholder">正在載入座位圖...</div>
       <div class="stage-zoom-hint">可用手指縮放 / 拖曳查看</div>
       <div class="stage-recenter" id="stageRecenter" onclick="recenter()" title="回到座位">⛶</div>
-      <div class="cine-bar top"></div>
-      <div class="cine-bar bottom"></div>
     </div>
     <div class="result-panel" id="resultPanel"></div>
   </div>
@@ -392,19 +366,11 @@ function computeTransform(bounds, viewportW, viewportH, marginFactor){
 let currentT = {scale:1, tx:0, ty:0};
 const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
-/* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
-const ZOOM_DELAY_MS = 300;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
-const ZOOM_DURATION_MS = 800;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
-const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
-const RACK_FOCUS_BLUR = 2;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
-
-function applyTransform(t, animate, blurPx){
+function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  const dur = (ZOOM_DURATION_MS/1000)+'s';
-  world.style.transition = animate ? ('transform '+dur+' '+ZOOM_EASING+', filter '+dur+' '+ZOOM_EASING) : 'none';
+  world.style.transition = animate ? 'transform 0.9s cubic-bezier(.5,.47,.3,.91)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
-  if(blurPx!=null) world.style.filter = blurPx>0 ? ('blur('+blurPx+'px)') : 'none';
 }
 function readRenderedTransform(){
   const world = document.getElementById('stageWorld');
@@ -415,55 +381,25 @@ function readRenderedTransform(){
   }catch(err){ return currentT; }
 }
 
-/* ---- 相機對焦框（總覽階段，標出目標在整個會場的哪個位置，像相機搜尋對焦）---- */
-let focusFrameEl = null;
-function clearFocusFrame(){
-  if(focusFrameEl && focusFrameEl.parentNode) focusFrameEl.parentNode.removeChild(focusFrameEl);
-  focusFrameEl = null;
-}
-
-
-function showFocusFrame(cx, cy, color){
-  clearFocusFrame();
-  const world = document.getElementById('stageWorld');
-  const el = document.createElement('div');
-  el.className = 'focus-frame';
-  el.style.left = cx+'px';
-  el.style.top = cy+'px';
-  el.style.setProperty('--pc', color || '#B8935A');
-  el.innerHTML = '<span class="corner c-tl"></span><span class="corner c-tr"></span>'+
-                  '<span class="corner c-bl"></span><span class="corner c-br"></span>';
-  world.appendChild(el);
-  focusFrameEl = el;
-}
-
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
-function focusOn(bounds, immediate, focusColor){
+function focusOn(bounds, immediate){
   const vp = document.getElementById('stageViewport');
   lastViewportW = vp.clientWidth;
   const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, 0.92);
-  applyTransform(overviewT, false, 0);
+  applyTransform(overviewT, false);
   void vp.offsetWidth; // force reflow
-  clearFocusFrame();
-  vp.classList.remove('cinematic');
   if(immediate){
     lastFocusBounds = worldBounds; lastFocusMargin = 0.92;
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
-  const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
-  showFocusFrame(cx, cy, focusColor);
-  document.getElementById('stageWorld').style.filter = 'blur('+RACK_FOCUS_BLUR+'px)'; // 先稍微失焦，醞釀期待感
-
+  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
   setTimeout(()=>{
-    clearFocusFrame();
-    vp.classList.add('cinematic'); // 電影黑邊滑入
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
-    applyTransform(targetT, true, 0); // 運鏡拉近的同時，景深也一起慢慢對焦清晰
+    applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-    setTimeout(()=>{ vp.classList.remove('cinematic'); }, ZOOM_DURATION_MS + 600); // 安頓後黑邊收回
-  }, ZOOM_DELAY_MS);
+  }, 350);
 }
 function recenter(){
   if(!lastFocusBounds) return;
@@ -472,7 +408,7 @@ function recenter(){
   document.getElementById('stageWorld').style.transition = 'none';
   void vp.offsetWidth;
   const t = computeTransform(lastFocusBounds, vp.clientWidth, vp.clientHeight, lastFocusMargin);
-  applyTransform(t, true, 0);
+  applyTransform(t, true);
 }
 
 /* ---- manual pinch-zoom / drag-pan / wheel-zoom on the stage ---- */
@@ -617,7 +553,6 @@ function runSearch(baseName){
   }).join('');
   resultPanel.innerHTML = '<div class="result-card"><div class="result-title">找到 '+matched.length+' 位「'+escapeHTML(baseName)+'」</div>'+rowsHTML+'</div>'+
     '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
-  fitTextToWidth(resultPanel.querySelectorAll('.rname'), 10);
 
   if(seatedTables.size>0){
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -626,10 +561,9 @@ function runSearch(baseName){
       minX=Math.min(minX,t.x-30); minY=Math.min(minY,t.y-30);
       maxX=Math.max(maxX,t.x+280); maxY=Math.max(maxY,t.y+270);
     });
-    const focusColor = mealColor(seatedMatched[0].meal);
-    focusOn({minX,minY,maxX,maxY}, false, focusColor);
+    focusOn({minX,minY,maxX,maxY});
   } else {
-    focusOn(worldBounds, true);
+    focusOn(worldBounds);
   }
 }
 
