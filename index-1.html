@@ -23,7 +23,7 @@
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
 
   .header{padding:22px 20px 14px;text-align:center;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);}
-  .header h1{font-size:22px;letter-spacing:1.5px;}
+  .header h1{font-size:18px;letter-spacing:1.5px;}
   .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
   .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
 
@@ -56,27 +56,121 @@
   .plandmark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.15));}
   .plandmark-label{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:700;
     background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:var(--ink-soft);display: none;}
-  /*.ptable-topbar{display:flex;justify-content:center;padding-bottom:2px;}*/
   .ptable-topbar{display:none;justify-content:center;padding-bottom:2px;}
   .ptable-no{font-family:'Noto Serif TC',serif;font-size:11px;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
-  .plabel-row{display:flex;justify-content:center;}
+  .plabel-row{display:flex;justify-content:center;overflow:visible;}
   .plabel{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);background:#fff;
-    border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;}
+    border:1.5px solid var(--line);border-radius:14px;padding:2px 10px;position:relative;}
+  .plabel.matched{
+    /*border:2.5px solid transparent;
+    padding:5px 16px;
+    font-size:14.5px;
+    color:#ff6a00eb;
+    background:
+    linear-gradient(#fff, #fff) padding-box, linear-gradient(
+    90deg, #ffffff, #ff6a00, #ffffff, #ff6a00, #ffffff) border-box;
+    background-size: 100% 100%, 300% 100%;
+    box-shadow:0 3px 12px rgba(184,147,90,.4);
+    animation: textPopUpTop 1.8s cubic-bezier(.34,1.56,.64,1.2) both, plabelBorderFlow 5.2s linear infinite;
+    z-index:6;*/
+    border: 2.5px solid transparent;
+    border-radius: 99em;
+    padding: 5px 20px;
+    font-size: 24px;
+    color: #E99729;
+    background:
+        linear-gradient(#fff, #fff) padding-box, 
+        /* 【關鍵1】明確寫出 0%, 25%, 50%, 75%, 100%，確保顏色對稱分布 */
+        linear-gradient(180deg, #ffffff 0%, #E99729 25%, #ffffff 50%, #E99729 75%, #ffffff 100%) border-box; 
+    /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
+    background-size: 100% 100%, 100% 200%; 
+    box-shadow: 0 3px 12px rgba(184,147,90,.4);
+    /*animation: textPopUpTop 1.6s .8s cubic-bezier(.34,1.56,.64,1.5) both, plabelBorderFlow 1.5s linear infinite;*/
+    animation:seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite, plabelBorderFlow 1.5s linear infinite;
+    z-index: 6;
+    margin: -12px;
+    bottom: 10px;
+  }
+  @keyframes plabelBorderFlow{
+    0%{ background-position: 0 0, 0% 0; }
+    100%{ background-position: 0 0, 0 100%; }
+  }
+  @keyframes textPopUpTop{
+    0%{ opacity:0; transform: translateY(9px) scale(.55); }
+    55%{ opacity:1; transform: translateY(-4.5px) scale(1.2); }
+    78%{ transform: translateY(2px) scale(.94); }
+    100%{ opacity:1; transform: translateY(0) scale(1); }
+  }
   .prow{display:flex;gap:6px;justify-content:center;overflow:visible;}
-  .prow.top{margin-top:18px;}
+  .prow.top{margin-top:25px;}
   .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
   .pseat{width:74px;height:56px;border-radius:6px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
   .pseat.filled{background:#EFE9DC;}
-  .pseat.match{border-color:var(--mc,var(--gold));box-shadow:0 0 0 3px var(--mc,var(--gold));
-    animation:pulseSeat 1.6s ease-in-out infinite;}
+
+  .pseat.match{
+    border:2px solid transparent;
+    border-radius:7px;
+    /*background:
+      linear-gradient(#fff,#fff) padding-box,
+      linear-gradient(90deg, var(--mc,var(--gold)), #fff6e0, var(--mc,var(--gold)), #fff6e0, var(--mc,var(--gold))) border-box;*/
+    background: linear-gradient(#fff,#fff) padding-box;
+    border-color: var(--mc);
+    background-size: 100% 100%, 300% 100%;
+    box-shadow:0 5px 16px rgba(0,0,0,.2);
+    animation:
+      seatPopIn 1.5s .7s cubic-bezier(.34,1.56,.64,1) both,pulseSeat 1.6s ease-in-out infinite;
+      /*seatBorderFlow 2.4s linear infinite;*/
+    z-index:6;
+  }
+  .pseat.match::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:7px;
+    box-shadow: inset 0 0 10px rgba(255,255,255,.5);
+    pointer-events:none;
+  }
+  .pseat.match::after{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius:9px;
+    border:1px solid var(--mc,var(--gold));
+    animation:seatRipple 1.8s ease-out infinite;
+    animation-delay:.35s;
+    pointer-events:none;
+  }
+  .pseat-sparkle{position:absolute;font-size:12px;line-height:1;pointer-events:none;
+    filter:drop-shadow(0 0 3px rgba(255,255,255,.9));animation:sparkleTwinkle 1.6s ease-in-out infinite;}
+  .pseat-sparkle.s1{top:-9px;left:-9px;animation-delay:0s;}
+  .pseat-sparkle.s2{top:-7px;right:-10px;animation-delay:.55s;}
+  .pseat-sparkle.s3{bottom:-10px;left:30px;animation-delay:1.1s;}
+  @keyframes sparkleTwinkle{
+    0%,100%{opacity:0;transform:scale(.3) rotate(0deg);}
+    50%{opacity:1;transform:scale(1.25) rotate(25deg);}
+  }
+  @keyframes seatBorderFlow{
+    0%{ background-position:0 0, 0% 0; }
+    100%{ background-position:0 0, 300% 0; }
+  }
+  @keyframes seatRipple{
+    0%{ transform:scale(1); opacity:.85; }
+    100%{ transform:scale(1.35); opacity:0; }
+  }
+  @keyframes seatPopIn{
+    0%{ opacity:0.8; transform:scale(1) rotate(0deg); }
+    50%{ opacity:1; transform:scale(1) rotate(0deg); }
+    70%{ transform:scale(1.1) rotate(0deg); }
+    100%{ opacity:1; transform:scale(1) rotate(0deg); }
+  }
   @keyframes pulseSeat{
     0%,100%{box-shadow:0 0 3px 1px var(--mc,var(--gold));}
     50%{box-shadow:0 0 8px 3px var(--mc,var(--gold));}
   }
   .pseat-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
     background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.18);z-index:5;}
-  .pseat-badge svg{width:27px;height:27px;display:block;}
-  .pseat-name{position:absolute;left:0;right:0;bottom:5px;text-align:center;font-size:14px;font-weight:700;
+  /*.pseat-badge svg{width:27px;height:27px;display:block;}*/
+  .pseat-name{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:15px;font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
 
   .result-panel{padding:14px 4px 4px;}
@@ -107,9 +201,10 @@
 
 <div class="wrap">
   <div class="header">
-    <h1>婚宴座位查詢</h1>
+    <h1>HsiEn & LeeHsin</h1>
+    <h1></h1>
     <div class="rule"></div>
-    <p>請輸入您的姓名，查詢座位</p>
+    <p>婚宴座位查詢</p>
   </div>
 
   <div class="search-area">
@@ -117,7 +212,7 @@
       <input class="search-input" id="searchInput" placeholder="輸入姓名，例如：王小明" autocomplete="off" oninput="onSearchInput(this.value)" />
       <div class="suggest-list" id="suggestList" style="display:none;"></div>
     </div>
-    <div class="search-hint">輸入名字中任一字即可搜尋，同行賓客會一起顯示。</div>
+    <div class="search-hint">輸入名字中任一字搜尋，同行賓客會一起顯示。</div>
     <div class="search-hint">到達座位後，桌上會有您的姓名卡。</div>
   </div>
 
@@ -126,12 +221,12 @@
       <div class="stage-world" id="stageWorld"></div>
       <div class="stage-placeholder" id="stagePlaceholder">正在載入座位圖...</div>
       <div class="stage-zoom-hint">可用手指縮放 / 拖曳查看</div>
-      <div class="stage-recenter" id="stageRecenter" onclick="recenter()" title="回到座位">◎</div>
+      <div class="stage-recenter" id="stageRecenter" onclick="recenter()" title="回到座位">⛶</div>
     </div>
     <div class="result-panel" id="resultPanel"></div>
   </div>
 
-  <div class="footer-note">座位如有異動請以現場公告為準</div>
+  <div class="footer-note"></div>
 </div>
 
 <script>
@@ -144,19 +239,14 @@ let worldBounds = {minX:0,minY:0,maxX:1200,maxY:800};
 
 /* ---------------- meal icons (shared style with admin) ---------------- */
 function mealColor(meal){
-  const map = {'牛肉':'#A8553F','鴨肉':'#ff9b0e','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
+  const map = {'牛肉':'#A8553F','鴨肉':'#ffe000','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
   return map[meal] || '#B0A695';
 }
-function mealIcon(meal){
-  const c = mealColor(meal);
-  const icons = {
-    '牛肉': `<svg viewBox="0 0 32 32"><path d="M16 5c-2 0-3 2-3 2s-3-3-6-1c-2 1-2 4 0 5 0 0-2 2-2 5 0 5 5 9 11 9s11-4 11-9c0-3-2-5-2-5 2-1 2-4 0-5-3-2-6 1-6 1s-1-2-3-2z" fill="${c}"/><ellipse cx="16" cy="21" rx="4" ry="3" fill="#fff" opacity="0.9"/><circle cx="14.3" cy="21" r="0.9" fill="${c}"/><circle cx="17.7" cy="21" r="0.9" fill="${c}"/><circle cx="11.3" cy="15" r="1.1" fill="#2b2b2b"/><circle cx="20.7" cy="15" r="1.1" fill="#2b2b2b"/></svg>`,
-    '鴨肉': `<svg viewBox="0 0 32 32"><ellipse cx="17" cy="14" rx="8" ry="7" fill="${c}"/><path d="M9 15c-3 0-6 1-6 3s3 2 6 1z" fill="${c}"/><circle cx="19.5" cy="11.5" r="1.2" fill="#2b2b2b"/></svg>`,
-    '兒童餐': `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="${c}"/><circle cx="11.5" cy="14" r="1.6" fill="#fff"/><circle cx="20.5" cy="14" r="1.6" fill="#fff"/><path d="M10 20c2 3 10 3 12 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
-    '素食': `<svg viewBox="0 0 32 32"><path d="M6 27C5 14 17 6 27 6c1 10-3 22-19 22-1.3 0-1.7-0.3-2-1z" fill="${c}"/><path d="M9 24C13 16 18 12 24 9" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/></svg>`,
-    '嬰兒': `<svg viewBox="0 0 32 32"><rect x="12" y="10" width="8" height="14" rx="3" fill="${c}"/><rect x="13" y="4.5" width="6" height="6.5" rx="2" fill="${c}" opacity="0.55"/><rect x="14" y="2" width="4" height="3" rx="1.5" fill="${c}"/></svg>`
-  };
-  return icons[meal] || `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" fill="none" stroke="${c}" stroke-width="2.5"/><text x="16" y="21" font-size="14" text-anchor="middle" fill="${c}" font-family="sans-serif">?</text></svg>`;
+function mealIcon(meal, size){
+  const px = size || 16;
+  const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'👶','素食':'🌳','嬰兒':'🍼'};
+  const e = map[meal] || '🍽️';
+  return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;">'+e+'</span>';
 }
 function escapeHTML(s){
   return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -205,6 +295,7 @@ function computeWorldBounds(){
 
 /* ---------------- stage rendering ---------------- */
 let highlightSet = new Set();
+let highlightLabelKeys = new Set();
 
 function pseatCellHTML(t, i){
   const occ = getGuestAtSeat(t.id, i);
@@ -213,8 +304,11 @@ function pseatCellHTML(t, i){
   if(isMatch){
     const c = mealColor(occ.meal);
     return '<div class="pseat filled match" style="--mc:'+c+'">'+
-      '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal)+'</div>'+
+      '<div class="pseat-badge" style="border-color:'+c+'">'+mealIcon(occ.meal,23)+'</div>'+
       '<span class="pseat-name">'+escapeHTML(occ.name)+'</span>'+
+      '<span class="pseat-sparkle s1"></span>'+
+      '<span class="pseat-sparkle s2"></span>'+
+      '<span class="pseat-sparkle s3"></span>'+
     '</div>';
   }
   return '<div class="pseat filled"></div>';
@@ -222,13 +316,15 @@ function pseatCellHTML(t, i){
 function ptableHTML(t){
   const top=[0,1,2].map(i=>pseatCellHTML(t,i)).join('');
   const bottom=[3,4,5].map(i=>pseatCellHTML(t,i)).join('');
+  const topMatch = highlightLabelKeys.has(t.id+'-top');
+  const bottomMatch = highlightLabelKeys.has(t.id+'-bottom');
   return '<div class="ptable" style="left:'+t.x+'px; top:'+t.y+'px;">'+
     '<div class="ptable-topbar"><span class="ptable-no">#'+t.no+'</span></div>'+
-    '<div class="plabel-row"><span class="plabel">'+escapeHTML(t.topName||(t.no+'A'))+'</span></div>'+
+    '<div class="plabel-row"><span class="plabel'+(topMatch?' matched':'')+'">'+escapeHTML(t.topName||(t.no+'A'))+'</span></div>'+
     '<div class="prow top">'+top+'</div>'+
     '<div class="psurface"></div>'+
     '<div class="prow">'+bottom+'</div>'+
-    '<div class="plabel-row" style="margin-top:10px;"><span class="plabel">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
+    '<div class="plabel-row" style="margin-top:37px;"><span class="plabel'+(bottomMatch?' matched':'')+'">'+escapeHTML(t.bottomName||(t.no+'B'))+'</span></div>'+
   '</div>';
 }
 function plandmarkHTML(l){
@@ -242,6 +338,19 @@ function renderStageStatic(){
   world.style.width = (worldBounds.maxX-worldBounds.minX)+'px';
   world.style.height = (worldBounds.maxY-worldBounds.minY)+'px';
   world.innerHTML = landmarks.map(plandmarkHTML).join('') + tables.map(ptableHTML).join('');
+  fitTextToWidth(world.querySelectorAll('.pseat-name'), 7);
+}
+
+/* ---- 姓名過長時自動縮小字體，而不是被裁切看不到 ---- */
+function fitTextToWidth(elements, minPx){
+  elements.forEach(el=>{
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    let guard = 8;
+    while(el.scrollWidth > el.clientWidth + 0.5 && size > minPx && guard-- > 0){
+      size -= 1;
+      el.style.fontSize = size + 'px';
+    }
+  });
 }
 
 function computeTransform(bounds, viewportW, viewportH, marginFactor){
@@ -260,7 +369,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 1.25s cubic-bezier(.2,.8,.2,1)' : 'none';
+  world.style.transition = animate ? 'transform 0.8s cubic-bezier(.39,.12,1,.17)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
@@ -284,12 +393,13 @@ function focusOn(bounds, immediate){
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
+  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
   setTimeout(()=>{
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
     applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-  }, 550);
+  }, 350);
 }
 function recenter(){
   if(!lastFocusBounds) return;
@@ -408,6 +518,7 @@ function resetSearch(){
   document.getElementById('suggestOverlay').classList.remove('show');
   document.getElementById('resultPanel').innerHTML = '';
   highlightSet = new Set();
+  highlightLabelKeys = new Set();
   renderStageStatic();
   focusOn(worldBounds);
 }
@@ -416,11 +527,16 @@ function runSearch(baseName){
   const matched = guests.filter(g=> baseNameOf(g.name) === baseName);
   const resultPanel = document.getElementById('resultPanel');
   if(matched.length===0){
+    highlightSet = new Set();
+    highlightLabelKeys = new Set();
+    renderStageStatic();
     resultPanel.innerHTML = '<div class="result-card">查無「'+escapeHTML(baseName)+'」的資料，請確認姓名是否正確</div>'+
       '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
     return;
   }
-  highlightSet = new Set(matched.filter(g=>g.tableId!=null).map(g=>g.id));
+  const seatedMatched = matched.filter(g=>g.tableId!=null);
+  highlightSet = new Set(seatedMatched.map(g=>g.id));
+  highlightLabelKeys = new Set(seatedMatched.map(g=> g.tableId+'-'+(g.seatIndex<3 ? 'top' : 'bottom')));
   renderStageStatic();
 
   const seatedTables = new Set(matched.filter(g=>g.tableId!=null).map(g=>g.tableId));
@@ -429,7 +545,7 @@ function runSearch(baseName){
     const t = seated ? tables.find(x=>x.id===g.tableId) : null;
     const label = seated ? (g.seatIndex<3 ? (t.topName||(t.no+'A')) : (t.bottomName||(t.no+'B'))) : '';
     return '<div class="result-row '+(seated?'':'unassigned')+'">'+
-      '<span class="rname">'+escapeHTML(g.name)+'</span>'+    
+      '<span class="rname">'+escapeHTML(g.name)+'</span>'+
       '<span class="ricon">'+mealIcon(g.meal)+'</span>'+
       '<span class="rmeal">'+escapeHTML(g.meal||'未填餐點')+'</span>'+
       '<span class="rloc">'+(seated ? escapeHTML(label) : '尚未安排') +'</span>'+
