@@ -484,7 +484,7 @@ function showLensFlare(durationMs){
   setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, durationMs + 200);
 }
 
-/* ---- 開場字卡：抵達後淡入顯示賓客姓名，像電影角色登場字幕 ---- */
+/* ---- 開場字卡：抵達後淡入顯示賓客姓名，像電影角色登場字幕 ---- 
 function showTitleCard(name, sub, color){
   const vp = document.getElementById('stageViewport');
   const el = document.createElement('div');
@@ -494,7 +494,7 @@ function showTitleCard(name, sub, color){
     (sub ? '<div class="tc-sub">'+escapeHTML(sub)+'</div>' : '');
   vp.appendChild(el);
   setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 2900);
-}
+}*/
 
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
 function focusOn(bounds, immediate, focusColor, titleName, titleSub){
