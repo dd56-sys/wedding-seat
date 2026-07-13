@@ -369,7 +369,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 function applyTransform(t, animate){
   currentT = t;
   const world = document.getElementById('stageWorld');
-  world.style.transition = animate ? 'transform 1.2s cubic-bezier(.55,-0.01,.22,1.72)' : 'none';
+  world.style.transition = animate ? 'transform 1.2s cubic-bezier(.57,0,.47,2.6)' : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
 }
 function readRenderedTransform(){
