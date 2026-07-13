@@ -176,20 +176,23 @@
     100%{ transform:scale(3.2); opacity:0; }
   }
 
-  /* 抵達時的衝擊波：螢幕座標，不受地圖縮放影響 */
-  .impact-burst{position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;
-    border-radius:50%;border:3px solid var(--pc,var(--gold));pointer-events:none;z-index:40;
-    animation:impactRing .65s ease-out forwards;}
-  @keyframes impactRing{
-    0%{ transform:scale(.4); opacity:1; }
-    100%{ transform:scale(10); opacity:0; }
+  /* 抵達時的柔和效果：光暈綻放 + 金色微塵飄散，螢幕座標，不受地圖縮放影響 */
+  .impact-bloom{position:absolute;top:50%;left:50%;width:200px;height:200px;margin:-100px 0 0 -100px;
+    border-radius:50%;pointer-events:none;z-index:40;opacity:0;filter:blur(1px);
+    background:radial-gradient(circle, var(--pc,var(--gold)) 0%, rgba(255,255,255,0) 70%);
+    animation:bloomFade 1.2s ease-out forwards;}
+  @keyframes bloomFade{
+    0%{ opacity:0; transform:scale(.3); }
+    30%{ opacity:.4; transform:scale(1); }
+    100%{ opacity:0; transform:scale(1.4); }
   }
-  .stage-viewport.shake{ animation: viewShake .26s ease-in-out; }
-  @keyframes viewShake{
-    0%,100%{ transform:translate(0,0); }
-    25%{ transform:translate(-4px,3px); }
-    50%{ transform:translate(4px,-3px); }
-    75%{ transform:translate(-2px,-1px); }
+  .dust-mote{position:absolute;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:41;opacity:0;
+    background:var(--pc,var(--gold));box-shadow:0 0 6px 1.5px var(--pc,var(--gold));
+    animation:moteRise 1.4s ease-out forwards;}
+  @keyframes moteRise{
+    0%{ opacity:0; transform:translate(0,0) scale(.4); }
+    22%{ opacity:1; }
+    100%{ opacity:0; transform:translate(var(--dx,0),-36px) scale(1); }
   }
 
   .footer-note{text-align:center;font-size:11px;color:#b3a89a;padding:14px 20px 24px;}
@@ -402,16 +405,32 @@ function showLocatingPing(cx, cy, color){
   pingEl = el;
 }
 
-/* ---- 抵達時的衝擊波 + 震動（螢幕座標，不受地圖縮放影響）---- */
-function showImpactBurst(color){
+/* ---- 抵達時的柔和效果：光暈綻放 + 金色微塵飄散（螢幕座標，不受地圖縮放影響）---- */
+function showArrivalGlow(color){
+  const pc = color || '#B8935A';
   const vp = document.getElementById('stageViewport');
-  const el = document.createElement('div');
-  el.className = 'impact-burst';
-  el.style.setProperty('--pc', color || '#B8935A');
-  vp.appendChild(el);
-  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 700);
-  vp.classList.add('shake');
-  setTimeout(()=>vp.classList.remove('shake'), 260);
+
+  const bloom = document.createElement('div');
+  bloom.className = 'impact-bloom';
+  bloom.style.setProperty('--pc', pc);
+  vp.appendChild(bloom);
+  setTimeout(()=>{ if(bloom.parentNode) bloom.parentNode.removeChild(bloom); }, 1300);
+
+  const cx = vp.clientWidth/2, cy = vp.clientHeight/2;
+  const moteCount = 6;
+  for(let i=0;i<moteCount;i++){
+    const mote = document.createElement('span');
+    mote.className = 'dust-mote';
+    const angle = (Math.PI*2/moteCount)*i + (Math.random()*0.5-0.25);
+    const dist = 22 + Math.random()*16;
+    mote.style.left = (cx + Math.cos(angle)*dist)+'px';
+    mote.style.top = (cy + Math.sin(angle)*dist)+'px';
+    mote.style.setProperty('--pc', pc);
+    mote.style.setProperty('--dx', (Math.cos(angle)*10)+'px');
+    mote.style.animationDelay = (i*0.07)+'s';
+    vp.appendChild(mote);
+    setTimeout(()=>{ if(mote.parentNode) mote.parentNode.removeChild(mote); }, 1900);
+  }
 }
 
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
@@ -435,7 +454,7 @@ function focusOn(bounds, immediate, focusColor){
     applyTransform(targetT, true);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
-    setTimeout(()=>{ showImpactBurst(focusColor); }, ZOOM_DURATION_MS);
+    setTimeout(()=>{ showArrivalGlow(focusColor); }, ZOOM_DURATION_MS);
   }, ZOOM_DELAY_MS);
 }
 function recenter(){
