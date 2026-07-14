@@ -74,11 +74,8 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-        animation:
-      bubbleEmerge .95s cubic-bezier(.34,1.56,.64,1) both,
-      seatGlow 1.8s ease-in-out infinite,
-      bubbleFloat 2.6s ease-in-out infinite;
-    animation-delay: 2s, 2s, 2.95s;
+    animation: labelBubblePop .75s 2s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s 2s linear infinite;
+
     z-index: 6;
     margin: -12px;
     bottom: 10px;
@@ -87,6 +84,15 @@
     0%{ background-position: 0 0, 0% 0; }
     100%{ background-position: 0 0, 0 100%; }
   }
+
+   @keyframes labelBubblePop{
+    0%{ opacity:0; transform: translateY(16px) scale(.4,.6); }
+    35%{ opacity:1; transform: translateY(-8px) scale(1.2,.8); }
+    55%{ transform: translateY(4px) scale(.85,1.15); }
+    72%{ transform: translateY(-3px) scale(1.08,.94); }
+    88%{ transform: translateY(1px) scale(.97,1.03); }
+    100%{ opacity:1; transform: translateY(0) scale(1,1); }
+  } 
   @keyframes textPopUpTop{
     0%{ opacity:0; transform: translateY(9px) scale(.55); }
     55%{ opacity:1; transform: translateY(-4.5px) scale(1.2); }
