@@ -100,19 +100,6 @@
   .canvas-toolbar{position:sticky;top:0;left:0;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
     padding:10px 16px;background:rgba(250,246,239,.94);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);}
   .canvas-toolbar .spacer{flex:1;}
-  .btn-active{background:var(--groom);color:#fff;border-color:var(--groom);}
-  .btn-active:hover{background:#24578a;color:#fff;}
-
-  .multi-select-bar{position:sticky;top:0;left:0;z-index:19;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    padding:8px 16px;background:var(--groom-bg);border-bottom:1px solid var(--groom);font-size:12.5px;}
-  .multi-select-bar #multiSelectCount{font-weight:700;color:var(--groom);white-space:nowrap;}
-  .multi-select-bar .hint-inline{color:var(--ink-soft);flex:1;min-width:180px;}
-
-  .marquee-box{position:absolute;border:1.5px dashed var(--groom);background:rgba(46,109,164,.12);z-index:60;pointer-events:none;display:none;}
-
-  .seat-chip.multi-selected{box-shadow:0 0 0 2.5px var(--groom) inset;}
-  .multi-check{position:absolute;bottom:1px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--groom);
-    color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:7;}
   .table-count-badge{font-size:12.5px;color:var(--ink-soft);}
   .zoom-controls{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px;}
   .zoom-controls button{border:none;background:transparent;padding:4px 8px;font-size:14px;border-radius:5px;color:var(--ink);}
@@ -413,7 +400,6 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
       <button class="btn btn-sm file-btn">＋ 上傳參照物
         <input type="file" id="landmarkInput" accept="image/*" />
       </button>
-      <button class="btn btn-sm" id="multiSelectBtn" onclick="toggleMultiSelectMode()" title="開啟後可框選或點選多位賓客，拖曳整組交換座位">☑ 多選交換</button>
       <span class="table-count-badge">共 <b id="tableCount">0</b> 桌（每桌 6 位）</span>
       <div class="zoom-controls">
         <button onclick="zoomOut()" title="縮小">－</button>
@@ -424,11 +410,6 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
       </div>
       <div class="spacer"></div>
       <div class="legend-row" id="legendRow"></div>
-    </div>
-    <div id="multiSelectBar" class="multi-select-bar" style="display:none;">
-      <span id="multiSelectCount">已選取 0 位</span>
-      <span class="hint-inline">在空白處拖曳框選，或點選座位上的賓客加入／移除選取；拖曳其中一位到目標座位即可整組交換</span>
-      <button class="btn btn-sm" onclick="clearMultiSelect()">清除選取</button>
     </div>
     <div id="canvasSizer">
       <div id="canvas"></div>
@@ -447,9 +428,6 @@ let landmarks = [];
 let guestSeq = 1, tableSeq = 1, landmarkSeq = 1;
 let selectedGuestId = null;
 let justPlacedIds = new Set();
-let multiSelectMode = false;
-let multiSelectedIds = new Set();
-let marqueeState = null;
 let filterCategory = 'all';
 let searchTerm = '';
 let zoom = 1;
@@ -519,19 +497,7 @@ function onChipRemove(e, id){
   if(selectedGuestId===id) selectedGuestId=null;
   render();
 }
-function onChipClick(id){
-  if(multiSelectMode){
-    const g = getGuest(id);
-    if(g && g.tableId!=null){
-      if(multiSelectedIds.has(id)) multiSelectedIds.delete(id); else multiSelectedIds.add(id);
-      updateMultiSelectBar();
-      render();
-      return;
-    }
-  }
-  selectedGuestId = (selectedGuestId===id) ? null : id;
-  render();
-}
+function onChipClick(id){ selectedGuestId = (selectedGuestId===id) ? null : id; render(); }
 function onChipDragStart(e, id){ e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed='move'; }
 
 /* ---------------- guest edit modal ---------------- */
@@ -583,156 +549,12 @@ function onSeatClick(tableId, seatIndex){
 function onSeatDrop(e, tableId, seatIndex){
   e.preventDefault();
   const id = e.dataTransfer.getData('text/plain');
-  if(!id) return;
-  if(multiSelectedIds.has(id) && multiSelectedIds.size>1){
-    batchSwap(multiSelectedIds, tableId, seatIndex);
-    multiSelectedIds = new Set();
-    updateMultiSelectBar();
-  } else {
-    assign(id, tableId, seatIndex);
-  }
-  selectedGuestId=null;
-  render();
+  if(id){ assign(id, tableId, seatIndex); selectedGuestId=null; render(); }
 }
 function onDropToUnassigned(e){
   e.preventDefault();
   const id = e.dataTransfer.getData('text/plain');
   if(id){ const g=getGuest(id); if(g){ g.tableId=null; g.seatIndex=null; } selectedGuestId=null; render(); }
-}
-
-/* ---------------- 批次交換座位（多選後拖曳整組交換）---------------- */
-function batchSwap(selectedIds, dropTableId, dropSeatIndex){
-  const selGuests = Array.from(selectedIds).map(id=>getGuest(id)).filter(g=>g && g.tableId!=null);
-  if(selGuests.length===0) return;
-  const sortedTables = tables.slice().sort((a,b)=>(a.y-b.y)||(a.x-b.x));
-
-  // 依目前座位順序（桌次順序 → 座位編號）排序，決定交換時的對應順序
-  selGuests.sort((a,b)=>{
-    const ta = sortedTables.findIndex(t=>t.id===a.tableId);
-    const tb = sortedTables.findIndex(t=>t.id===b.tableId);
-    if(ta!==tb) return ta-tb;
-    return a.seatIndex-b.seatIndex;
-  });
-
-  // 從放開滑鼠的座位開始，依序往後找出等量的目標座位
-  const startTableIdx = sortedTables.findIndex(t=>t.id===dropTableId);
-  const targets = [];
-  let ti = startTableIdx, si = dropSeatIndex;
-  while(targets.length < selGuests.length && ti>=0 && ti < sortedTables.length){
-    targets.push({ tableId: sortedTables[ti].id, seatIndex: si });
-    si++;
-    if(si>=6){ si=0; ti++; }
-  }
-  if(targets.length < selGuests.length){
-    alert('目標位置空間不足，只會交換前 '+targets.length+' 位，其餘維持原位。');
-  }
-
-  const origins = selGuests.map(g=>({ tableId:g.tableId, seatIndex:g.seatIndex }));
-  const selIdSet = new Set(selGuests.map(g=>g.id));
-  // 先把每個目標座位目前的佔用者記錄下來（排除本身也在選取範圍內的人，避免互相覆蓋）
-  const displaced = targets.map(t=>{
-    const occ = getGuestAtSeat(t.tableId, t.seatIndex);
-    return (occ && !selIdSet.has(occ.id)) ? occ : null;
-  });
-
-  selGuests.forEach((g,i)=>{
-    if(i>=targets.length) return; // 空間不足，維持原位
-    g.tableId = targets[i].tableId; g.seatIndex = targets[i].seatIndex;
-    justPlacedIds.add(g.id);
-    const dg = displaced[i];
-    if(dg){
-      dg.tableId = origins[i].tableId; dg.seatIndex = origins[i].seatIndex;
-      justPlacedIds.add(dg.id);
-    }
-  });
-}
-
-/* ---------------- 多選模式 / 框選 ---------------- */
-function toggleMultiSelectMode(){
-  multiSelectMode = !multiSelectMode;
-  const btn = document.getElementById('multiSelectBtn');
-  if(multiSelectMode){
-    btn.classList.add('btn-active');
-  } else {
-    btn.classList.remove('btn-active');
-    multiSelectedIds = new Set();
-  }
-  updateMultiSelectBar();
-  render();
-}
-function clearMultiSelect(){
-  multiSelectedIds = new Set();
-  updateMultiSelectBar();
-  render();
-}
-function updateMultiSelectBar(){
-  const bar = document.getElementById('multiSelectBar');
-  const count = document.getElementById('multiSelectCount');
-  if(!bar || !count) return;
-  if(multiSelectedIds.size>0){
-    bar.style.display = 'flex';
-    count.textContent = '已選取 '+multiSelectedIds.size+' 位';
-  } else {
-    bar.style.display = 'none';
-  }
-}
-
-const MARQUEE_EXCLUDE_SELECTOR = '.seat, .table-surface, .landmark img, .landmark-resize, .landmark-lock, .landmark-del, .table-label, .landmark-label, .table-del';
-function onCanvasPointerDown(e){
-  if(!multiSelectMode) return;
-  if(e.target.closest(MARQUEE_EXCLUDE_SELECTOR)) return;
-  const canvas = document.getElementById('canvas');
-  const rect = canvas.getBoundingClientRect();
-  const startX = (e.clientX-rect.left)/zoom, startY = (e.clientY-rect.top)/zoom;
-  marqueeState = { startX, startY, curX:startX, curY:startY };
-  showMarqueeBox();
-  updateMarqueeBox();
-  document.addEventListener('pointermove', onCanvasPointerMove);
-  document.addEventListener('pointerup', onCanvasPointerUp);
-}
-function onCanvasPointerMove(e){
-  if(!marqueeState) return;
-  const canvas = document.getElementById('canvas');
-  const rect = canvas.getBoundingClientRect();
-  marqueeState.curX = (e.clientX-rect.left)/zoom;
-  marqueeState.curY = (e.clientY-rect.top)/zoom;
-  updateMarqueeBox();
-}
-function onCanvasPointerUp(){
-  if(!marqueeState) return;
-  const x1=Math.min(marqueeState.startX,marqueeState.curX), x2=Math.max(marqueeState.startX,marqueeState.curX);
-  const y1=Math.min(marqueeState.startY,marqueeState.curY), y2=Math.max(marqueeState.startY,marqueeState.curY);
-  if(Math.abs(x2-x1)>5 || Math.abs(y2-y1)>5){
-    selectGuestsInRect(x1,y1,x2,y2);
-  }
-  marqueeState = null;
-  hideMarqueeBox();
-  document.removeEventListener('pointermove', onCanvasPointerMove);
-  document.removeEventListener('pointerup', onCanvasPointerUp);
-}
-function showMarqueeBox(){ const el=document.getElementById('marqueeBox'); if(el) el.style.display='block'; }
-function hideMarqueeBox(){ const el=document.getElementById('marqueeBox'); if(el) el.style.display='none'; }
-function updateMarqueeBox(){
-  const el = document.getElementById('marqueeBox');
-  if(!el || !marqueeState) return;
-  const x1=Math.min(marqueeState.startX,marqueeState.curX), x2=Math.max(marqueeState.startX,marqueeState.curX);
-  const y1=Math.min(marqueeState.startY,marqueeState.curY), y2=Math.max(marqueeState.startY,marqueeState.curY);
-  el.style.left=x1+'px'; el.style.top=y1+'px'; el.style.width=(x2-x1)+'px'; el.style.height=(y2-y1)+'px';
-}
-function selectGuestsInRect(x1,y1,x2,y2){
-  const canvas = document.getElementById('canvas');
-  const rect = canvas.getBoundingClientRect();
-  document.querySelectorAll('.seat.filled .seat-chip').forEach(chipEl=>{
-    const r = chipEl.getBoundingClientRect();
-    const cx = ((r.left+r.width/2) - rect.left)/zoom;
-    const cy = ((r.top+r.height/2) - rect.top)/zoom;
-    if(cx>=x1 && cx<=x2 && cy>=y1 && cy<=y2){
-      const id = chipEl.id.replace('seatchip-','');
-      if(id) multiSelectedIds.add(id);
-    }
-  });
-  updateMultiSelectBar();
-  render();
 }
 
 /* ---------------- tables ---------------- */
@@ -1057,12 +879,6 @@ function render(){
   scheduleSave();
   playJellyEffect(Array.from(justPlacedIds));
   justPlacedIds = new Set();
-  // 清除已不存在或已離座的多選賓客
-  multiSelectedIds.forEach(id=>{
-    const g = getGuest(id);
-    if(!g || g.tableId==null) multiSelectedIds.delete(id);
-  });
-  updateMultiSelectBar();
 }
 function playJellyEffect(ids){
   if(!ids || ids.length===0) return;
@@ -1128,15 +944,14 @@ function guestChipHTML(g){
 }
 function seatChipHTML(g){
   const sel = selectedGuestId===g.id ? 'selected' : '';
-  const multi = multiSelectedIds.has(g.id) ? ' multi-selected' : '';
+  const jelly = justPlacedIds.has(g.id) ? ' jelly-pop' : '';
   const c = mealColor(g.meal);
-  return '<div class="seat-chip '+categoryClass(g.category)+' '+sel+multi+'" id="seatchip-'+g.id+'" draggable="true" '+
+  return '<div class="seat-chip '+categoryClass(g.category)+' '+sel+jelly+'" draggable="true" '+
     'ondragstart="onChipDragStart(event,\''+g.id+'\')" onclick="event.stopPropagation(); onChipClick(\''+g.id+'\')">'+
     '<div class="seat-badge" style="border-color:'+c+'">'+mealIcon(g.meal,17)+'</div>'+
     '<span class="seat-name">'+escapeHTML(g.name)+'</span>'+
     '<span class="seat-edit" onclick="event.stopPropagation(); openGuestEdit(\''+g.id+'\')" title="編輯賓客資料">✎</span>'+
     '<span class="seat-remove" onclick="onChipRemove(event,\''+g.id+'\')">✕</span>'+
-    (multiSelectedIds.has(g.id) ? '<span class="multi-check">✓</span>' : '') +
   '</div>';
 }
 function renderGuestList(){
@@ -1181,8 +996,7 @@ function renderTables(){
   canvas.innerHTML = landmarks.map(landmarkHTML).join('') + tables.map(tableHTML).join('') +
     (tables.length===0 && landmarks.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '') +
     '<div id="guideV" class="align-guide guide-v" style="display:none;"></div>'+
-    '<div id="guideH" class="align-guide guide-h" style="display:none;"></div>'+
-    '<div id="marqueeBox" class="marquee-box"></div>';
+    '<div id="guideH" class="align-guide guide-h" style="display:none;"></div>';
   document.getElementById('tableCount').textContent = tables.length;
   updateCanvasFrame();
 }
@@ -1394,7 +1208,6 @@ async function checkExistingSession(){
 }
 
 /* ---------------- init ---------------- */
-document.getElementById('canvas').addEventListener('pointerdown', onCanvasPointerDown);
 checkExistingSession();
 </script>
 </body>
