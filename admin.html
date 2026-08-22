@@ -398,8 +398,13 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
     </div>
 
     <div class="sec">
-      <button class="btn btn-gold btn-block" onclick="generateSeatingChart()">🖨 一鍵產出座位圖</button>
-      <div class="hint" style="margin-top:6px;">產生一份可直接列印/存成 PDF 的座位圖，會顯示桌號、賓客姓名與主餐，不含參照物圖片。</div>
+      <button class="btn btn-gold btn-block" onclick="generateSeatingChart()">🖨 一鍵產出座位圖（全部）</button>
+      <div class="row-2" style="margin-top:8px;">
+        <button class="btn btn-sm btn-block" style="border-color:#2E6DA4;color:#2E6DA4;" onclick="generateSeatingChart('男方親友')">男方親友</button>
+        <button class="btn btn-sm btn-block" style="border-color:#C0453B;color:#C0453B;" onclick="generateSeatingChart('女方親友')">女方親友</button>
+        <button class="btn btn-sm btn-block" style="border-color:#3F8F5C;color:#3F8F5C;" onclick="generateSeatingChart('共同好友')">共同好友</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">產生可直接列印/存成 PDF 的座位圖，顯示桌號、姓名與主餐，不含參照物圖片。也可以只產出單一歸屬的版本，方便分開交給不同人。</div>
     </div>
 
     <div class="sec">
@@ -964,15 +969,27 @@ function triggerDownload(filename, content){
 }
 
 /* ---------------- 一鍵產出座位圖（列印/存 PDF 用，不含參照物）---------------- */
-function generateSeatingChart(){
+function generateSeatingChart(category){
   if(tables.length===0){ alert('目前尚未建立任何桌子'); return; }
-  const sortedTables = tables.slice().sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  const catColors = {'男方親友':'#2E6DA4','女方親友':'#C0453B','共同好友':'#3F8F5C'};
+  const catColor = category ? (catColors[category]||'#B8935A') : '#B8935A';
+  let sortedTables = tables.slice().sort((a,b)=>(a.y-b.y)||(a.x-b.x));
+  if(category){
+    sortedTables = sortedTables.filter(t=>{
+      for(let i=0;i<6;i++){ const g=getGuestAtSeat(t.id,i); if(g && g.category===category) return true; }
+      return false;
+    });
+    if(sortedTables.length===0){ alert('目前沒有「'+category+'」的賓客已安排座位'); return; }
+  }
 
   function seatRowHTML(t, indices){
     return indices.map(i=>{
       const g = getGuestAtSeat(t.id, i);
       if(!g){
         return '<div class="sc-seat sc-empty">（空位）</div>';
+      }
+      if(category && g.category!==category){
+        return '<div class="sc-seat sc-other">（其他歸屬賓客）</div>';
       }
       const emoji = MEAL_EMOJI[g.meal] || '🍽️';
       const meal = g.meal || '未填餐點';
@@ -993,18 +1010,19 @@ function generateSeatingChart(){
     '</div>';
   }).join('');
 
-  const unseated = guests.filter(g=>g.tableId==null);
+  const unseated = guests.filter(g=>g.tableId==null && (!category || g.category===category));
   const unseatedHTML = unseated.length ? (
     '<div class="sc-unseated"><h2>尚未安排座位（'+unseated.length+' 位）</h2><div class="sc-unseated-list">'+
     unseated.map(g=>'<span class="sc-unseated-item">'+escapeHTML(g.name)+'（'+escapeHTML(g.meal||'未填餐點')+'）</span>').join('') +
     '</div></div>'
   ) : '';
 
-  const totalGuests = guests.length;
-  const seatedCount = guests.filter(g=>g.tableId!=null).length;
+  const totalGuests = category ? guests.filter(g=>g.category===category).length : guests.length;
+  const seatedCount = category ? guests.filter(g=>g.tableId!=null && g.category===category).length : guests.filter(g=>g.tableId!=null).length;
+  const titleSuffix = category ? ('・'+category) : '';
 
   const html = '<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">'+
-    '<title>婚宴座位圖</title>'+
+    '<title>婚宴座位圖'+titleSuffix+'</title>'+
     '<link rel="preconnect" href="https://fonts.googleapis.com">'+
     '<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">'+
     '<style>'+
@@ -1015,10 +1033,10 @@ function generateSeatingChart(){
     '.sc-toolbar{text-align:center;margin-bottom:20px;}'+
     '.sc-toolbar button{font-family:inherit;font-size:14px;padding:9px 20px;border-radius:6px;border:1px solid #332C27;background:#332C27;color:#fff;cursor:pointer;}'+
     '.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;max-width:1200px;margin:0 auto;}'+
-    '.sc-card{background:#fff;border:1px solid #E7DED2;border-radius:12px;padding:14px 16px;break-inside:avoid;}'+
+    '.sc-card{background:#fff;border:1px solid '+(category?catColor:'#E7DED2')+';border-radius:12px;padding:14px 16px;break-inside:avoid;}'+
     '.sc-card-head{text-align:center;margin-bottom:8px;}'+
-    '.sc-no{display:inline-block;font-family:"Noto Serif TC",serif;font-weight:700;font-size:14px;color:#B8935A;'+
-      'border:1.5px solid #B8935A;border-radius:20px;padding:2px 14px;}'+
+    '.sc-no{display:inline-block;font-family:"Noto Serif TC",serif;font-weight:700;font-size:14px;color:'+catColor+';'+
+      'border:1.5px solid '+catColor+';border-radius:20px;padding:2px 14px;}'+
     '.sc-label{font-family:"Noto Serif TC",serif;font-weight:700;font-size:13px;color:#332C27;margin-bottom:6px;text-align:center;}'+
     '.sc-seat{display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px dashed #E7DED2;font-size:13px;}'+
     '.sc-seat:last-child{border-bottom:none;}'+
@@ -1026,6 +1044,7 @@ function generateSeatingChart(){
     '.sc-name{font-weight:700;flex:1;}'+
     '.sc-meal{color:#6E645A;font-size:11.5px;flex:none;}'+
     '.sc-empty{color:#c3b8a4;font-style:italic;justify-content:center;}'+
+    '.sc-other{color:#c3b8a4;font-style:italic;justify-content:center;}'+
     '.sc-divider{height:10px;}'+
     '.sc-unseated{max-width:1200px;margin:26px auto 0;background:#fff;border:1px solid #E7DED2;border-radius:12px;padding:16px 18px;}'+
     '.sc-unseated h2{font-family:"Noto Serif TC",serif;font-size:15px;margin:0 0 10px;}'+
@@ -1033,8 +1052,8 @@ function generateSeatingChart(){
     '.sc-unseated-item{background:#FAF6EF;border:1px solid #E7DED2;border-radius:14px;padding:3px 12px;font-size:12.5px;}'+
     '@media print{ body{background:#fff;padding:0;} .sc-toolbar{display:none;} .sc-card{border:1px solid #ccc;} }'+
     '</style></head><body>'+
-    '<h1>婚宴座位圖</h1>'+
-    '<div class="sc-sub">共 '+tables.length+' 桌・賓客 '+totalGuests+' 位・已安排 '+seatedCount+' 位</div>'+
+    '<h1>婚宴座位圖'+(category?('<br><span style="font-size:15px;color:'+catColor+';letter-spacing:3px;">'+category+'</span>'):'')+'</h1>'+
+    '<div class="sc-sub">共 '+sortedTables.length+' 桌'+(category?'（含此歸屬賓客）':'')+'・'+(category?category+' ':'')+'賓客 '+totalGuests+' 位・已安排 '+seatedCount+' 位</div>'+
     '<div class="sc-toolbar"><button onclick="window.print()">🖨 列印 / 存成 PDF</button></div>'+
     '<div class="sc-grid">'+cardsHTML+'</div>'+
     unseatedHTML+
