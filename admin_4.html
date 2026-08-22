@@ -398,11 +398,6 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
     </div>
 
     <div class="sec">
-      <button class="btn btn-gold btn-block" onclick="generateSeatingChart()">🖨 一鍵產出座位圖</button>
-      <div class="hint" style="margin-top:6px;">產生一份可直接列印/存成 PDF 的座位圖，會顯示桌號、賓客姓名與主餐，不含參照物圖片。</div>
-    </div>
-
-    <div class="sec">
       <div class="row-2">
         <button class="btn btn-sm btn-block" onclick="resetSeating()">清空所有座位</button>
         <button class="btn btn-sm btn-block" onclick="exportSeatingCSV()">匯出座位表</button>
@@ -467,14 +462,14 @@ let realtimeChannel = null;
 const CFG = window.APP_CONFIG || {};
 
 /* ---------------- icons ---------------- */
-const MEAL_EMOJI = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'👶','素食':'🌳','嬰兒':'🍼'};
 function mealColor(meal){
   const map = {'牛肉':'#A8553F','鴨肉':'#ffe000','兒童餐':'#6FA8A0','素食':'#5E8B4F','嬰兒':'#B7A6D6'};
   return map[meal] || '#B0A695';
 }
 function mealIcon(meal, size){
   const px = size || 16;
-  const e = MEAL_EMOJI[meal] || '🍽️';
+  const map = {'牛肉':'🍖','鴨肉':'🦆','兒童餐':'👶','素食':'🌳','嬰兒':'🍼'};
+  const e = map[meal] || '🍽️';
   return '<span style="font-size:'+px+'px;line-height:1;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;">'+e+'</span>';
 }
 
@@ -961,89 +956,6 @@ function triggerDownload(filename, content){
   const a=document.createElement('a'); a.href=url; a.download=filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
-
-/* ---------------- 一鍵產出座位圖（列印/存 PDF 用，不含參照物）---------------- */
-function generateSeatingChart(){
-  if(tables.length===0){ alert('目前尚未建立任何桌子'); return; }
-  const sortedTables = tables.slice().sort((a,b)=>(a.y-b.y)||(a.x-b.x));
-
-  function seatRowHTML(t, indices){
-    return indices.map(i=>{
-      const g = getGuestAtSeat(t.id, i);
-      if(!g){
-        return '<div class="sc-seat sc-empty">（空位）</div>';
-      }
-      const emoji = MEAL_EMOJI[g.meal] || '🍽️';
-      const meal = g.meal || '未填餐點';
-      return '<div class="sc-seat">'+
-        '<span class="sc-emoji">'+emoji+'</span>'+
-        '<span class="sc-name">'+escapeHTML(g.name)+'</span>'+
-        '<span class="sc-meal">'+escapeHTML(meal)+'</span>'+
-      '</div>';
-    }).join('');
-  }
-
-  const cardsHTML = sortedTables.map(t=>{
-    return '<div class="sc-card">'+
-      '<div class="sc-card-head"><span class="sc-no">第 '+t.no+' 桌</span></div>'+
-      '<div class="sc-section"><div class="sc-label">'+escapeHTML(t.topName||(t.no+'A'))+'</div>'+seatRowHTML(t,[0,1,2])+'</div>'+
-      '<div class="sc-divider"></div>'+
-      '<div class="sc-section"><div class="sc-label">'+escapeHTML(t.bottomName||(t.no+'B'))+'</div>'+seatRowHTML(t,[3,4,5])+'</div>'+
-    '</div>';
-  }).join('');
-
-  const unseated = guests.filter(g=>g.tableId==null);
-  const unseatedHTML = unseated.length ? (
-    '<div class="sc-unseated"><h2>尚未安排座位（'+unseated.length+' 位）</h2><div class="sc-unseated-list">'+
-    unseated.map(g=>'<span class="sc-unseated-item">'+escapeHTML(g.name)+'（'+escapeHTML(g.meal||'未填餐點')+'）</span>').join('') +
-    '</div></div>'
-  ) : '';
-
-  const totalGuests = guests.length;
-  const seatedCount = guests.filter(g=>g.tableId!=null).length;
-
-  const html = '<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">'+
-    '<title>婚宴座位圖</title>'+
-    '<link rel="preconnect" href="https://fonts.googleapis.com">'+
-    '<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">'+
-    '<style>'+
-    '*{box-sizing:border-box;}'+
-    'body{margin:0;font-family:"Noto Sans TC",sans-serif;background:#FAF6EF;color:#332C27;padding:28px;}'+
-    'h1{font-family:"Noto Serif TC",serif;font-size:24px;text-align:center;margin:0 0 4px;letter-spacing:2px;}'+
-    '.sc-sub{text-align:center;color:#6E645A;font-size:13px;margin-bottom:22px;}'+
-    '.sc-toolbar{text-align:center;margin-bottom:20px;}'+
-    '.sc-toolbar button{font-family:inherit;font-size:14px;padding:9px 20px;border-radius:6px;border:1px solid #332C27;background:#332C27;color:#fff;cursor:pointer;}'+
-    '.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;max-width:1200px;margin:0 auto;}'+
-    '.sc-card{background:#fff;border:1px solid #E7DED2;border-radius:12px;padding:14px 16px;break-inside:avoid;}'+
-    '.sc-card-head{text-align:center;margin-bottom:8px;}'+
-    '.sc-no{display:inline-block;font-family:"Noto Serif TC",serif;font-weight:700;font-size:14px;color:#B8935A;'+
-      'border:1.5px solid #B8935A;border-radius:20px;padding:2px 14px;}'+
-    '.sc-label{font-family:"Noto Serif TC",serif;font-weight:700;font-size:13px;color:#332C27;margin-bottom:6px;text-align:center;}'+
-    '.sc-seat{display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px dashed #E7DED2;font-size:13px;}'+
-    '.sc-seat:last-child{border-bottom:none;}'+
-    '.sc-emoji{font-size:15px;flex:none;}'+
-    '.sc-name{font-weight:700;flex:1;}'+
-    '.sc-meal{color:#6E645A;font-size:11.5px;flex:none;}'+
-    '.sc-empty{color:#c3b8a4;font-style:italic;justify-content:center;}'+
-    '.sc-divider{height:10px;}'+
-    '.sc-unseated{max-width:1200px;margin:26px auto 0;background:#fff;border:1px solid #E7DED2;border-radius:12px;padding:16px 18px;}'+
-    '.sc-unseated h2{font-family:"Noto Serif TC",serif;font-size:15px;margin:0 0 10px;}'+
-    '.sc-unseated-list{display:flex;flex-wrap:wrap;gap:8px;}'+
-    '.sc-unseated-item{background:#FAF6EF;border:1px solid #E7DED2;border-radius:14px;padding:3px 12px;font-size:12.5px;}'+
-    '@media print{ body{background:#fff;padding:0;} .sc-toolbar{display:none;} .sc-card{border:1px solid #ccc;} }'+
-    '</style></head><body>'+
-    '<h1>婚宴座位圖</h1>'+
-    '<div class="sc-sub">共 '+tables.length+' 桌・賓客 '+totalGuests+' 位・已安排 '+seatedCount+' 位</div>'+
-    '<div class="sc-toolbar"><button onclick="window.print()">🖨 列印 / 存成 PDF</button></div>'+
-    '<div class="sc-grid">'+cardsHTML+'</div>'+
-    unseatedHTML+
-    '</body></html>';
-
-  const blob = new Blob([html], {type:'text/html;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(()=>URL.revokeObjectURL(url), 30000);
 }
 
 /* ---------------- search / filter ---------------- */
