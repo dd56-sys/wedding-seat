@@ -363,6 +363,7 @@ const CFG = window.APP_CONFIG || {};
 let guests = [];
 let tables = [];
 let landmarks = [];
+let waypoints = [];
 let worldBounds = {minX:0,minY:0,maxX:1200,maxY:800};
 
 /* ---------------- meal icons (shared style with admin) ---------------- */
@@ -403,6 +404,7 @@ async function loadData(){
     guests = (data && data.data && data.data.guests) || [];
     tables = (data && data.data && data.data.tables) || [];
     landmarks = (data && data.data && data.data.landmarks) || [];
+    waypoints = (data && data.data && data.data.waypoints) || [];
     computeWorldBounds();
     renderStageStatic();
     document.getElementById('stagePlaceholder').style.display = tables.length ? 'none' : 'flex';
@@ -562,113 +564,22 @@ function showTitleCard(name, sub, color){
   setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 2900);
 }*/
 
-/* ---- 走道路線：從入口參照物走到座位，自動繞開桌子與其他參照物 ---- */
+/* ---- 走道路線：從入口參照物走到座位，沿著 admin 後台手動放置的路徑點走 ---- */
 function findEntranceLandmark(){
   return landmarks.find(l => l.name && l.name.indexOf('入口') !== -1) || null;
 }
 
-function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
-  const rects = [];
-  tables.forEach(t=>{
-    if(t.id===excludeTableId) return; // 目標桌子本身不當障礙物，讓路徑能走到桌邊
-    rects.push({x0:t.x-4, y0:t.y-4, x1:t.x+tableW+4, y1:t.y+tableH+4});
+/* 路徑點是 admin 後台手動放的固定轉折點，依放置順序排成一條主走道。
+   找離座位最近的那個路徑點，沿走道依序走到那一點，再直接切進去——
+   不能用「總距離最短」來挑，因為直接抄近路一定比繞走道短，會變成永遠不走路徑點 */
+function buildFixedRoute(entrancePt, targetPt){
+  if(waypoints.length===0) return [entrancePt, targetPt];
+  let bestIdx = 0, bestDist = Infinity;
+  waypoints.forEach((w,i)=>{
+    const d = Math.hypot(w.x-targetPt.x, w.y-targetPt.y);
+    if(d < bestDist){ bestDist = d; bestIdx = i; }
   });
-  landmarks.forEach(l=>{
-    if(entranceLandmark && l===entranceLandmark) return; // 入口本身不擋路
-    rects.push({x0:l.x-4, y0:l.y-4, x1:l.x+l.w+4, y1:l.y+l.h+4});
-  });
-  return rects;
-}
-
-/* 粗略網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點 */
-function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
-  const targetRect = {x0:targetTable.x, y0:targetTable.y, x1:targetTable.x+tableW, y1:targetTable.y+tableH};
-  const targetCenter = {x:(targetRect.x0+targetRect.x1)/2, y:(targetRect.y0+targetRect.y1)/2};
-
-  /* 搜尋範圍只框住「障礙物本身 + 入口 + 座位」的緊密範圍，不要留 worldBounds 那種給總覽用的大片留白，
-     不然 BFS 會發現繞去會場外面那圈空地反而路徑比較短，導致路線繞到桌子外圍去而不是走裡面的走道 */
-  let hx0=Math.min(entrancePt.x, targetCenter.x), hy0=Math.min(entrancePt.y, targetCenter.y);
-  let hx1=Math.max(entrancePt.x, targetCenter.x), hy1=Math.max(entrancePt.y, targetCenter.y);
-  obstacles.forEach(r=>{ hx0=Math.min(hx0,r.x0); hy0=Math.min(hy0,r.y0); hx1=Math.max(hx1,r.x1); hy1=Math.max(hy1,r.y1); });
-  const PAD = 24;
-  hx0-=PAD; hy0-=PAD; hx1+=PAD; hy1+=PAD;
-
-  const wbw = Math.max(1, hx1-hx0), wbh = Math.max(1, hy1-hy0);
-  const CELL = Math.max(10, Math.ceil(Math.sqrt((wbw*wbh)/40000)));
-  const gx0 = Math.floor(hx0/CELL)-1, gy0 = Math.floor(hy0/CELL)-1;
-  const gx1 = Math.ceil(hx1/CELL)+1, gy1 = Math.ceil(hy1/CELL)+1;
-  const cols = gx1-gx0, rows = gy1-gy0;
-
-  /* 入口跟座位本身周圍留一小圈保證可以走，避免障礙物的緩衝範圍剛好把起點/終點自己卡死找不到路 */
-  const CLEAR_R = Math.max(CELL*1.5, 20);
-  function cellBlocked(cx,cy){
-    const px = (gx0+cx+0.5)*CELL, py = (gy0+cy+0.5)*CELL;
-    if(Math.hypot(px-entrancePt.x, py-entrancePt.y) < CLEAR_R) return false;
-    if(Math.hypot(px-targetCenter.x, py-targetCenter.y) < CLEAR_R) return false;
-    for(let i=0;i<obstacles.length;i++){
-      const r = obstacles[i];
-      if(px>r.x0 && px<r.x1 && py>r.y0 && py<r.y1) return true;
-    }
-    return false;
-  }
-  function toCell(pt){ return { cx: Math.round(pt.x/CELL)-gx0, cy: Math.round(pt.y/CELL)-gy0 }; }
-
-  const start = toCell(entrancePt);
-  const goal = toCell(targetCenter);
-  const idx = (cx,cy)=> cy*cols+cx;
-  const visited = new Uint8Array(cols*rows);
-  const parent = new Int32Array(cols*rows).fill(-1);
-  const qx=[start.cx], qy=[start.cy];
-  visited[idx(start.cx,start.cy)] = 1;
-  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-  let head=0, found=false;
-  while(head<qx.length){
-    const cx=qx[head], cy=qy[head]; const ci=idx(cx,cy); head++;
-    if(cx===goal.cx && cy===goal.cy){ found=true; break; }
-    for(let d=0; d<dirs.length; d++){
-      const nx=cx+dirs[d][0], ny=cy+dirs[d][1];
-      if(nx<0||ny<0||nx>=cols||ny>=rows) continue;
-      const ni=idx(nx,ny);
-      if(visited[ni]) continue;
-      if(cellBlocked(nx,ny)) continue;
-      visited[ni]=1; parent[ni]=ci; qx.push(nx); qy.push(ny);
-    }
-  }
-  if(!found){
-    // 找不到路：退回一個 L 形轉折（先橫再直，取比較不會整段貼著桌子邊緣的那個方向），
-    // 至少看起來像走路轉彎，不會變成一條直接穿過所有桌子的斜線
-    const dx = Math.abs(targetCenter.x-entrancePt.x), dy = Math.abs(targetCenter.y-entrancePt.y);
-    const corner = dx>dy ? {x:targetCenter.x, y:entrancePt.y} : {x:entrancePt.x, y:targetCenter.y};
-    return [entrancePt, corner, targetCenter];
-  }
-
-  let cur = idx(goal.cx,goal.cy);
-  const cellsPath = [];
-  while(cur!==-1){ const cy=Math.floor(cur/cols), cx=cur-cy*cols; cellsPath.push({cx,cy}); cur=parent[cur]; }
-  cellsPath.reverse();
-
-  let pts = cellsPath.map(c=> ({x:(gx0+c.cx+0.5)*CELL, y:(gy0+c.cy+0.5)*CELL}));
-  pts[0] = entrancePt;
-
-  /* 路徑一進入目標桌子的範圍就截斷，讓箭頭停在桌邊而不是穿進桌子中心 */
-  const inset = 4;
-  let cutIndex = pts.length-1;
-  for(let i=0;i<pts.length;i++){
-    const p = pts[i];
-    if(p.x>targetRect.x0+inset && p.x<targetRect.x1-inset && p.y>targetRect.y0+inset && p.y<targetRect.y1-inset){ cutIndex=i; break; }
-  }
-  pts = pts.slice(0, cutIndex+1);
-  if(pts.length<2) pts.push(targetCenter);
-
-  /* 去掉共線的中間點，變成幾段直線轉折，而不是網格鋸齒 */
-  const simplified = [pts[0]];
-  for(let i=1;i<pts.length-1;i++){
-    const a=simplified[simplified.length-1], b=pts[i], c=pts[i+1];
-    const collinear = Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)) < 1;
-    if(!collinear) simplified.push(b);
-  }
-  simplified.push(pts[pts.length-1]);
-  return simplified;
+  return [entrancePt].concat(waypoints.slice(0, bestIdx+1).map(w=>({x:w.x, y:w.y}))).concat([targetPt]);
 }
 
 function ensureRouteSvg(){
@@ -759,13 +670,13 @@ function focusOn(bounds, immediate, focusColor, primaryTable){
   const entranceLandmark = primaryTable ? findEntranceLandmark() : null;
 
   /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
-  if(entranceLandmark){
+  if(entranceLandmark && waypoints.length>0){
     const entrancePt = { x: entranceLandmark.x + entranceLandmark.w/2, y: entranceLandmark.y + entranceLandmark.h };
     const sampleTable = document.querySelector('.ptable');
     const tableW = sampleTable ? sampleTable.offsetWidth : 250;
     const tableH = sampleTable ? sampleTable.offsetHeight : 260;
-    const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
-    const route = findRoute(entrancePt, primaryTable, obstacles, tableW, tableH);
+    const targetPt = { x: primaryTable.x + tableW/2, y: primaryTable.y + tableH + 6 };
+    const route = buildFixedRoute(entrancePt, targetPt);
     setTimeout(()=>{
       drawRoute(route, ()=> fadeRoute(doZoom));
     }, ZOOM_DELAY_MS);

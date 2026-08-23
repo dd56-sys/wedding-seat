@@ -141,6 +141,20 @@
   .landmark-label{position:absolute;left:50%;bottom:-22px;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;
     background:#fff;border:1.5px dashed var(--gold);border-radius:10px;padding:1px 8px;cursor:pointer;}
   .landmark-label:hover{background:var(--gold-light);border-style:solid;}
+
+  .waypoint{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;z-index:3;user-select:none;
+    border-radius:50%;background:#fff;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;color:var(--gold);cursor:grab;box-shadow:0 2px 6px rgba(0,0,0,.18);}
+  .waypoint:active{cursor:grabbing;}
+  .waypoint-del{position:absolute;top:-8px;right:-8px;width:16px;height:16px;border-radius:50%;background:#fff;
+    border:1px solid var(--line);font-size:9px;display:flex;align-items:center;justify-content:center;color:#c9bdae;cursor:pointer;}
+  .waypoint-del:hover{color:var(--danger);}
+  .waypoint-order{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:#fff;
+    border:1px solid var(--line);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);cursor:pointer;}
+  .waypoint-order:hover{border-color:var(--gold);color:var(--gold);}
+  .waypoint-order-prev{left:-20px;}
+  .waypoint-order-next{right:-20px;}
+  .waypoint-line{position:absolute;top:0;left:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:2;}
   .table-topbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px 2px;}
   .table-no{display:inline-flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:11px;font-weight:600;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .table-del{font-size:13px;color:#c9bdae;padding:2px 6px;border-radius:4px;}
@@ -423,6 +437,7 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
       <button class="btn btn-sm file-btn">＋ 上傳參照物
         <input type="file" id="landmarkInput" accept="image/*" />
       </button>
+      <button class="btn btn-sm" onclick="addWaypoint()" title="標出從入口到座位的走道轉折點，賓客查詢頁的路線動畫會依序連接這些點">＋ 新增路徑點</button>
       <button class="btn btn-sm" id="multiSelectBtn" onclick="toggleMultiSelectMode()" title="開啟後可框選或點選多位賓客，拖曳整組交換座位">☑ 多選交換</button>
       <span class="table-count-badge">共 <b id="tableCount">0</b> 桌（每桌 6 位）</span>
       <div class="zoom-controls">
@@ -454,7 +469,8 @@ using (bucket_id = 'landmarks' AND auth.role() = 'authenticated');</pre>
 let guests = [];
 let tables = [];
 let landmarks = [];
-let guestSeq = 1, tableSeq = 1, landmarkSeq = 1;
+let waypoints = [];
+let guestSeq = 1, tableSeq = 1, landmarkSeq = 1, waypointSeq = 1;
 let selectedGuestId = null;
 let justPlacedIds = new Set();
 let multiSelectMode = false;
@@ -499,6 +515,7 @@ function recalcSeq(){
   guestSeq = guests.reduce((m,g)=>Math.max(m, parseInt((g.id||'g0').slice(1))||0), 0)+1;
   tableSeq = tables.reduce((m,t)=>Math.max(m, t.no||0), 0)+1;
   landmarkSeq = landmarks.reduce((m,l)=>Math.max(m, parseInt((l.id||'l0').slice(1))||0), 0)+1;
+  waypointSeq = waypoints.reduce((m,w)=>Math.max(m, parseInt((w.id||'w0').slice(1))||0), 0)+1;
 }
 
 /* ---------------- guest CRUD ---------------- */
@@ -844,6 +861,7 @@ function getCanvasLogicalSize(){
   let maxX=1200, maxY=800;
   tables.forEach(t=>{ maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280); });
   landmarks.forEach(l=>{ maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40); });
+  waypoints.forEach(w=>{ maxX=Math.max(maxX, w.x+40); maxY=Math.max(maxY, w.y+40); });
   return {w:maxX, h:maxY};
 }
 function updateCanvasFrame(){
@@ -1096,6 +1114,7 @@ async function connectSupabase(){
       guests = data.data.guests || [];
       tables = data.data.tables || [];
       landmarks = data.data.landmarks || [];
+      waypoints = data.data.waypoints || [];
       recalcSeq();
       render();
       isApplyingRemote = false;
@@ -1128,7 +1147,7 @@ async function saveToCloud(){
   try{
     setSyncStatus('同步中...', 'busy');
     const { error } = await supabaseClient.from('wedding_seating_data').upsert({
-      event_code: syncEventCode, data:{ guests, tables, landmarks }, updated_at: new Date().toISOString()
+      event_code: syncEventCode, data:{ guests, tables, landmarks, waypoints }, updated_at: new Date().toISOString()
     });
     if(error) throw error;
     setSyncStatus('已同步 · '+nowStr(), 'ok');
@@ -1146,6 +1165,7 @@ function subscribeRealtime(){
         guests = payload.new.data.guests || [];
         tables = payload.new.data.tables || [];
         landmarks = payload.new.data.landmarks || [];
+        waypoints = payload.new.data.waypoints || [];
         recalcSeq();
         render();
         isApplyingRemote = false;
@@ -1268,6 +1288,15 @@ function landmarkHTML(l){
     '<span class="landmark-label" onclick="renameLandmark(\''+l.id+'\')" title="點選重新命名">'+escapeHTML(l.name||'參照物')+'</span>'+
   '</div>';
 }
+function waypointHTML(w){
+  const i = waypoints.indexOf(w);
+  return '<div class="waypoint" id="waypoint-'+w.id+'" style="left:'+w.x+'px; top:'+w.y+'px;" onpointerdown="onWaypointPointerDown(event,\''+w.id+'\')" title="拖曳調整位置，賓客頁的走道路線會依序經過這些點">'+
+    (i+1)+
+    '<span class="waypoint-del" onclick="onDeleteWaypoint(\''+w.id+'\')" title="刪除路徑點">✕</span>'+
+    (i>0 ? '<span class="waypoint-order waypoint-order-prev" onclick="moveWaypoint(\''+w.id+'\',-1)" title="跟前一個路徑點交換順序">‹</span>' : '')+
+    (i<waypoints.length-1 ? '<span class="waypoint-order waypoint-order-next" onclick="moveWaypoint(\''+w.id+'\',1)" title="跟下一個路徑點交換順序">›</span>' : '')+
+  '</div>';
+}
 function tableHTML(t){
   const top=[0,1,2].map(i=>seatCellHTML(t,i)).join('');
   const bottom=[3,4,5].map(i=>seatCellHTML(t,i)).join('');
@@ -1286,12 +1315,15 @@ function tableHTML(t){
 function renderTables(){
   const canvas = document.getElementById('canvas');
   canvas.innerHTML = landmarks.map(landmarkHTML).join('') + tables.map(tableHTML).join('') +
+    '<svg id="waypointLineSvg" class="waypoint-line"></svg>' +
+    waypoints.map(waypointHTML).join('') +
     (tables.length===0 && landmarks.length===0 ? '<div class="empty-canvas-hint">尚未建立任何桌子<br>點選左上角「＋ 新增桌子」開始安排會場</div>' : '') +
     '<div id="guideV" class="align-guide guide-v" style="display:none;"></div>'+
     '<div id="guideH" class="align-guide guide-h" style="display:none;"></div>'+
     '<div id="marqueeBox" class="marquee-box"></div>';
   document.getElementById('tableCount').textContent = tables.length;
   updateCanvasFrame();
+  renderWaypointLines();
 }
 
 /* ---------------- landmarks (參照物) ---------------- */
@@ -1389,6 +1421,70 @@ function toggleLandmarkLock(id){
   l.locked = !l.locked;
   render();
 }
+
+/* ---------------- waypoints (路徑點：從入口到座位的走道轉折點) ---------------- */
+function addWaypoint(){
+  const idx = waypoints.length;
+  const x = 60 + (idx % 5) * 50;
+  const y = 60 + Math.floor(idx/5) * 50;
+  waypoints.push({ id:'w'+(waypointSeq++), x, y });
+  render();
+}
+function onDeleteWaypoint(id){
+  waypoints = waypoints.filter(x=>x.id!==id);
+  render();
+}
+function moveWaypoint(id, dir){
+  const i = waypoints.findIndex(x=>x.id===id);
+  if(i<0) return;
+  const j = i+dir;
+  if(j<0 || j>=waypoints.length) return;
+  const tmp = waypoints[i]; waypoints[i]=waypoints[j]; waypoints[j]=tmp;
+  render();
+}
+function renderWaypointLines(){
+  const svg = document.getElementById('waypointLineSvg');
+  if(!svg) return;
+  if(waypoints.length===0){ svg.innerHTML=''; return; }
+  const entrance = landmarks.find(l=>l.name && l.name.indexOf('入口')!==-1);
+  let pts = waypoints.map(w=>({x:w.x, y:w.y}));
+  if(entrance){ pts = [{x:entrance.x+entrance.w/2, y:entrance.y+entrance.h}].concat(pts); }
+  const d = 'M'+pts.map(p=>p.x+','+p.y).join(' L ');
+  svg.innerHTML = '<path d="'+d+'" fill="none" stroke="#B8935A" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round" opacity="0.55"></path>';
+}
+
+let waypointDragState = null;
+function onWaypointPointerDown(e, id){
+  e.preventDefault(); e.stopPropagation();
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const w = waypoints.find(x=>x.id===id);
+  if(!w) return;
+  waypointDragState = { id, offsetX:(e.clientX-rect.left)/zoom - w.x, offsetY:(e.clientY-rect.top)/zoom - w.y };
+  document.addEventListener('pointermove', onWaypointPointerMove);
+  document.addEventListener('pointerup', onWaypointPointerUp);
+}
+function onWaypointPointerMove(e){
+  if(!waypointDragState) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const w = waypoints.find(x=>x.id===waypointDragState.id);
+  if(!w) return;
+  w.x = Math.max(0, Math.round((e.clientX-rect.left)/zoom - waypointDragState.offsetX));
+  w.y = Math.max(0, Math.round((e.clientY-rect.top)/zoom - waypointDragState.offsetY));
+  const el = document.getElementById('waypoint-'+w.id);
+  if(el){ el.style.left = w.x+'px'; el.style.top = w.y+'px'; }
+  renderWaypointLines();
+  updateCanvasFrame();
+}
+function onWaypointPointerUp(){
+  if(!waypointDragState) return;
+  waypointDragState = null;
+  document.removeEventListener('pointermove', onWaypointPointerMove);
+  document.removeEventListener('pointerup', onWaypointPointerUp);
+  updateCanvasFrame();
+  scheduleSave();
+}
 async function handleLandmarkUpload(file){
   if(!supabaseClient){ alert('請先完成登入與雲端連線後再上傳圖片'); return; }
   if(!file) return;
@@ -1473,6 +1569,7 @@ async function startCloudSync(){
         guests = data.data.guests || [];
         tables = data.data.tables || [];
         landmarks = data.data.landmarks || [];
+      waypoints = data.data.waypoints || [];
         recalcSeq();
         render();
         isApplyingRemote = false;
