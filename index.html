@@ -360,6 +360,13 @@
 <script>
 /* ---------------- config & state ---------------- */
 const CFG = window.APP_CONFIG || {};
+if(CFG.SUPABASE_URL){
+  // 越早開始建立連線（DNS/TLS）越好，不用等到真的要 fetch 資料才開始，省下建連線的時間
+  const preconnect = document.createElement('link');
+  preconnect.rel = 'preconnect';
+  preconnect.href = CFG.SUPABASE_URL;
+  document.head.appendChild(preconnect);
+}
 let guests = [];
 let tables = [];
 let landmarks = [];
@@ -421,12 +428,12 @@ function computeWorldBounds(){
   }
   let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
   tables.forEach(t=>{
-    minX=Math.min(minX, t.x-40); minY=Math.min(minY, t.y-30);
-    maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280);
+    minX=Math.min(minX, t.x-16); minY=Math.min(minY, t.y-16);
+    maxX=Math.max(maxX, t.x+266); maxY=Math.max(maxY, t.y+272);
   });
   landmarks.forEach(l=>{
-    minX=Math.min(minX, l.x-40); minY=Math.min(minY, l.y-40);
-    maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40);
+    minX=Math.min(minX, l.x-16); minY=Math.min(minY, l.y-16);
+    maxX=Math.max(maxX, l.x+l.w+16); maxY=Math.max(maxY, l.y+l.h+16);
   });
   worldBounds = {minX, minY, maxX, maxY};
 }
@@ -468,7 +475,7 @@ function ptableHTML(t){
 }
 function plandmarkHTML(l){
   return '<div class="plandmark" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
-    '<img src="'+l.url+'" alt="" />'+
+    '<img src="'+l.url+'" alt="" width="'+l.w+'" height="'+l.h+'" loading="eager" decoding="async" />'+
     (l.name ? '<span class="plandmark-label">'+escapeHTML(l.name)+'</span>' : '') +
   '</div>';
 }
@@ -506,8 +513,9 @@ let currentT = {scale:1, tx:0, ty:0};
 const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
 /* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
-const ZOOM_DELAY_MS = 900;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
+const ZOOM_DELAY_MS = 350;       // 總覽停留多久才開始畫路線（找到座位後多快開始畫走道路線）
 const ZOOM_DURATION_MS = 1200;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
+const OVERVIEW_MARGIN = 0.97;    // 總覽時內容跟畫面邊框留多少緩衝（1 = 完全貼邊，數字越小留白越多）
 const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
 const RACK_FOCUS_BLUR = 2;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
 
@@ -723,19 +731,22 @@ function drawRoute(points, onDone){
     const e = 1 - Math.pow(1-p, 3);
     pathEl.style.strokeDashoffset = len*(1-e);
     const pt = pathEl.getPointAtLength(e*len);
-    const ptA = pathEl.getPointAtLength(Math.min(len, e*len+2));
-    const ang = Math.atan2(ptA.y-pt.y, ptA.x-pt.x) * 180/Math.PI;
+    // 終點附近「往前look」的點會被夾在路徑終點，跟目前點重疊變成 (0,0)，atan2(0,0) 會算出 0 度（朝右），
+    // 箭頭抵達終點時就會突然轉向右邊。改成方向用「往前 2px 跟往後 2px」這兩點的差來算，終點也不會退化成同一點
+    const ptFwd = pathEl.getPointAtLength(Math.min(len, e*len+2));
+    const ptBack = pathEl.getPointAtLength(Math.max(0, e*len-2));
+    const ang = Math.atan2(ptFwd.y-ptBack.y, ptFwd.x-ptBack.x) * 180/Math.PI;
     arrowEl.setAttribute('transform', 'translate('+pt.x+','+pt.y+') rotate('+ang+')');
     if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 80); }
   }
   requestAnimationFrame(frame);
 }
 
-let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
+let lastFocusBounds = null, lastFocusMargin = OVERVIEW_MARGIN, lastViewportW = 0;
 function focusOn(bounds, immediate, focusColor, primaryTable){
   const vp = document.getElementById('stageViewport');
   lastViewportW = vp.clientWidth;
-  const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, 0.92);
+  const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, OVERVIEW_MARGIN);
   applyTransform(overviewT, false, 0);
   void vp.offsetWidth; // force reflow
   clearFocusFrame();
@@ -744,7 +755,7 @@ function focusOn(bounds, immediate, focusColor, primaryTable){
   if(existingRoute){ existingRoute.style.transition='none'; existingRoute.style.opacity='0'; }
 
   if(immediate){
-    lastFocusBounds = worldBounds; lastFocusMargin = 0.92;
+    lastFocusBounds = worldBounds; lastFocusMargin = OVERVIEW_MARGIN;
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
