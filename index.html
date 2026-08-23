@@ -74,7 +74,7 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    animation: labelBubblePop .95s 2s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s 2s linear infinite;
+    animation: labelBubblePop .95s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
 
     z-index: 6;
     margin: -12px;
@@ -120,7 +120,7 @@
       bubbleEmerge .95s cubic-bezier(.34,1.56,.64,1) both,
       seatGlow 1.8s ease-in-out infinite,
       bubbleFloat 2.6s ease-in-out infinite;
-    animation-delay: 2s, 2s, 2.95s;
+    animation-delay: 0s, 0s, .95s;
     z-index:8;
   }
   .pseat.match::before{
@@ -407,11 +407,12 @@ function computeWorldBounds(){
 /* ---------------- stage rendering ---------------- */
 let highlightSet = new Set();
 let highlightLabelKeys = new Set();
+let revealSeats = false; // 拉近抵達前，先維持跟其他座位一樣的樣式，不提前顯示姓名
 
 function pseatCellHTML(t, i){
   const occ = getGuestAtSeat(t.id, i);
   if(!occ) return '<div class="pseat"></div>';
-  const isMatch = highlightSet.has(occ.id);
+  const isMatch = highlightSet.has(occ.id) && revealSeats;
   if(isMatch){
     const c = mealColor(occ.meal);
     return '<div class="pseat filled match" style="--mc:'+c+'">'+
@@ -427,8 +428,8 @@ function pseatCellHTML(t, i){
 function ptableHTML(t){
   const top=[0,1,2].map(i=>pseatCellHTML(t,i)).join('');
   const bottom=[3,4,5].map(i=>pseatCellHTML(t,i)).join('');
-  const topMatch = highlightLabelKeys.has(t.id+'-top');
-  const bottomMatch = highlightLabelKeys.has(t.id+'-bottom');
+  const topMatch = highlightLabelKeys.has(t.id+'-top') && revealSeats;
+  const bottomMatch = highlightLabelKeys.has(t.id+'-bottom') && revealSeats;
   return '<div class="ptable" style="left:'+t.x+'px; top:'+t.y+'px;">'+
     '<div class="ptable-topbar"><span class="ptable-no">#'+t.no+'</span></div>'+
     '<div class="plabel-row"><span class="plabel'+(topMatch?' matched':'')+'">'+escapeHTML(t.topName||(t.no+'A'))+'</span></div>'+
@@ -574,8 +575,13 @@ function focusOn(bounds, immediate, focusColor, titleName, titleSub){
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
 
     setTimeout(()=>{
+      revealSeats = true; // 運鏡抵達，座位這時候才彈出姓名
+      renderStageStatic();
+    }, ZOOM_DURATION_MS);
+
+    setTimeout(()=>{
       vp.classList.remove('cinematic'); // 安頓後黑邊與顆粒收回
-      if(titleName) showTitleCard(titleName, titleSub, focusColor);
+      // 開場字卡功能目前停用中（showTitleCard 已被註解掉），故不呼叫
     }, ZOOM_DURATION_MS + 600);
   }, ZOOM_DELAY_MS);
 }
@@ -697,6 +703,7 @@ function resetSearch(){
   document.getElementById('resultPanel').innerHTML = '';
   highlightSet = new Set();
   highlightLabelKeys = new Set();
+  revealSeats = false;
   renderStageStatic();
   focusOn(worldBounds, true);
 }
@@ -704,6 +711,7 @@ function resetSearch(){
 function runSearch(baseName){
   const matched = guests.filter(g=> baseNameOf(g.name) === baseName);
   const resultPanel = document.getElementById('resultPanel');
+  revealSeats = false;
   if(matched.length===0){
     highlightSet = new Set();
     highlightLabelKeys = new Set();
