@@ -576,6 +576,7 @@ function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
   });
   landmarks.forEach(l=>{
     if(entranceLandmark && l===entranceLandmark) return; // 入口本身不擋路
+    if(!l.name || l.name === '參照物') return; // admin 上傳圖片沒改名的預設名稱，多半是花紋/地貼之類的裝飾，不是真的擋路的東西
     rects.push({x0:l.x-MARGIN, y0:l.y-MARGIN, x1:l.x+l.w+MARGIN, y1:l.y+l.h+MARGIN});
   });
   return rects;
