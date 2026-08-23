@@ -10,8 +10,8 @@
 <script src="config.js" onerror="window.APP_CONFIG=window.APP_CONFIG||{}"></script>
 <style>
   :root{
-    --ivory:#FAF6EF; --card:#FFFFFF; --ink:#332C27; --ink-soft:#6E645A;
-    --gold:#B8935A; --gold-light:#EFE2C9; --line:#E7DED2; --danger:#B85C5C;
+    --ivory:#FFFDF8; --card:#FFFFFF; --ink:#26221E; --ink-soft:#8C8177;
+    --gold:#E2AD29; --gold-deep:#B9860F; --gold-light:#FBEFD0; --line:#EDE6D6; --danger:#B85C5C;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--ivory);color:var(--ink);font-family:'Noto Sans TC',sans-serif;
@@ -22,30 +22,34 @@
 
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
 
-  .header{padding:22px 20px 14px;text-align:center;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);}
-  .header h1{font-size:18px;letter-spacing:1.5px;}
-  .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-  .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
+  .header{padding:32px 24px 20px;}
+  .header-eyebrow{display:flex;align-items:baseline;justify-content:space-between;}
+  .header-eyebrow .eyebrow-en{font-size:11px;letter-spacing:3px;color:var(--gold);font-weight:700;}
+  .header-eyebrow .eyebrow-zh{font-size:11px;letter-spacing:2px;color:var(--ink-soft);}
+  .header h1{margin-top:14px;font-size:32px;line-height:1.15;font-weight:700;color:var(--ink);}
+  .header h1 .amp{color:var(--gold);}
 
   .search-area{padding:16px 18px;position:relative;z-index:30;}
   .suggest-overlay{position:fixed;inset:0;background:rgba(20,16,12,.45);z-index:25;opacity:0;pointer-events:none;transition:opacity .2s ease;}
   .suggest-overlay.show{opacity:1;pointer-events:auto;}
   .search-box{position:relative;}
-  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-align: center;}
+  .search-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--gold);pointer-events:none;z-index:1;}
+  .search-input{width:100%;padding:15px 20px 15px 46px;font-size:16px;border:1.5px solid var(--gold-light);border-radius:26px;background:#fff;color:var(--ink);text-align:left;box-shadow:0 10px 22px rgba(226,173,41,.14);}
   .search-input:focus{outline:none;border-color:var(--gold);}
-  .search-hint{font-size:16px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
+  .search-input::placeholder{color:var(--ink-soft);opacity:.75;}
+  .search-hint{font-size:15px;color:var(--ink-soft);margin-top:10px;line-height:1.7;text-align:center;}
 
-  .suggest-list{position:absolute;left:18px;right:18px;top:56px;background:#fff;border:1px solid var(--line);
-    border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
+  .suggest-list{position:absolute;left:18px;right:18px;top:60px;background:#fff;border:1px solid var(--line);
+    border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
   .suggest-item{padding:12px 16px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line);text-align: center;}
   .suggest-item:last-child{border-bottom:none;}
   .suggest-item:active{background:var(--gold-light);}
   .suggest-empty{padding:14px 16px;font-size:13px;color:var(--ink-soft);text-align:center;}
 
   .stage-section{padding:0 18px 8px;flex:1;display:flex;flex-direction:column;}
-  .stage-viewport{position:relative;width:100%;height:48vh;min-height:300px;background:#F6F1E8;
-    background-image:radial-gradient(circle,#e4dac6 1px,transparent 1px);background-size:22px 22px;
-    border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .stage-viewport{position:relative;width:100%;height:48vh;min-height:300px;background:#FBF8F1;
+    background-image:radial-gradient(circle,#EFE4CC 1px,transparent 1px);background-size:22px 22px;
+    border:1px solid var(--line);border-radius:20px;overflow:hidden;}
   .stage-world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;}
   .stage-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     color:var(--ink-soft);font-size:13px;text-align:center;padding:20px;pointer-events:none;}
@@ -66,14 +70,14 @@
     border-radius: 99em;
     padding: 5px 20px;
     font-size: 24px;
-    color: #E99729;
+    color: var(--gold-deep);
     background:
-        linear-gradient(#fff, #fff) padding-box, 
+        linear-gradient(#fff, #fff) padding-box,
         /* 【關鍵1】明確寫出 0%, 25%, 50%, 75%, 100%，確保顏色對稱分布 */
-        linear-gradient(180deg, #ffffff 0%, #E99729 25%, #ffffff 50%, #E99729 75%, #ffffff 100%) border-box; 
+        linear-gradient(180deg, #ffffff 0%, var(--gold) 25%, #ffffff 50%, var(--gold) 75%, #ffffff 100%) border-box;
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
-    background-size: 100% 100%, 100% 200%; 
-    box-shadow: 0 3px 12px rgba(184,147,90,.4);
+    background-size: 100% 100%, 100% 200%;
+    box-shadow: 0 3px 12px rgba(226,173,41,.35);
     animation: labelBubblePop .6s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear 3 forwards;
 
     z-index: 6;
@@ -108,13 +112,13 @@
   }
   .prow{display:flex;gap:6px;justify-content:center;overflow:visible;}
   .prow.top{margin-top:25px;}
-  .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
-  .pseat{width:74px;height:56px;border-radius:6px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
+  .psurface{height:26px;margin:5px 8px;border-radius:8px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
+  .pseat{width:74px;height:56px;border-radius:12px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
   .pseat.filled{background:#EFE9DC;}
 
   .pseat.match{
     border:2px solid var(--mc,var(--gold));
-    border-radius:7px;
+    border-radius:12px;
     background:#fff;
     animation:
       bubbleEmerge .6s cubic-bezier(.34,1.56,.64,1) both,
@@ -127,7 +131,7 @@
     content:"";
     position:absolute;
     inset:0;
-    border-radius:7px;
+    border-radius:12px;
     box-shadow: inset 0 0 10px rgba(255,255,255,.5);
     pointer-events:none;
   }
@@ -135,7 +139,7 @@
     content:"";
     position:absolute;
     inset:-2px;
-    border-radius:9px;
+    border-radius:14px;
     border:1px solid var(--mc,var(--gold));
     animation:seatRipple 1.8s ease-out 4 forwards;
     animation-delay:.35s;
@@ -215,19 +219,19 @@
   .pseat-name{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:15px;font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
 
-  .result-panel{padding:14px 4px 4px;}
-  .result-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
-  .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:8px;}
-  .result-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--line);justify-content: space-evenly;}
+  .result-panel{padding:20px 4px 4px;}
+  .result-card{background:#fff;border:none;border-radius:20px;padding:18px 20px 16px;margin-bottom:12px;box-shadow:0 12px 26px rgba(226,173,41,.14);}
+  .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+  .result-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px dashed var(--line);}
   .result-row:first-of-type{border-top:none;}
-  .result-row .rname{font-weight:700;flex:0.8;font-size:18px;}
-  .result-row .ricon{width:25px;height:25px;flex:none;}
-  .result-row .rmeal{font-size:18px;color:var(--ink-soft);}
-  .result-row .rloc{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
-  .result-row.unassigned .rloc{color:var(--danger);}
-  .reset-btn{display:block;width:100%;margin:12px 0 4px;padding:12px;font-size:14px;font-weight:700;
-    color:#fff;background:var(--ink);border:1px solid var(--ink);border-radius:10px;letter-spacing:1px;}
-  .reset-btn:active{background:var(--gold);border-color:var(--gold);}
+  .result-row .rname{font-weight:700;flex:1;font-size:18px;color:var(--ink);}
+  .result-row .ricon{width:32px;height:32px;flex:none;border-radius:50%;background:var(--gold-light);display:flex;align-items:center;justify-content:center;}
+  .result-row .rmeal{font-size:14.5px;color:var(--ink-soft);flex:none;}
+  .result-row .rloc{font-size:14px;color:var(--ink);font-weight:700;white-space:nowrap;background:var(--gold);padding:6px 14px;border-radius:99px;}
+  .result-row.unassigned .rloc{color:#fff;background:var(--danger);}
+  .reset-btn{-webkit-appearance:none;appearance:none;display:block;width:fit-content;margin:18px auto 4px;padding:8px 2px;font-size:13px;font-weight:600;
+    color:var(--gold-deep);background:transparent;border:none;border-bottom:1.5px dashed var(--gold);letter-spacing:2px;}
+  .reset-btn:active{color:var(--ink);border-bottom-color:var(--ink);}
 
   .stage-recenter{position:absolute;bottom:10px;right:10px;z-index:10;width:38px;height:38px;border-radius:50%;
     background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.15);
@@ -312,14 +316,19 @@
 
 <div class="wrap">
   <div class="header">
-    <h1>HsiEn & LeeHsin</h1>
-    <h1></h1>
-    <div class="rule"></div>
-    <p>婚宴座位查詢</p>
+    <div class="header-eyebrow">
+      <span class="eyebrow-en">SEAT FINDER</span>
+      <span class="eyebrow-zh">婚宴座位查詢</span>
+    </div>
+    <h1>HsiEn <span class="amp">&amp;</span><br>LeeHsin</h1>
   </div>
 
   <div class="search-area">
     <div class="search-box">
+      <svg class="search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+        <line x1="21" y1="21" x2="16.4" y2="16.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
       <input class="search-input" id="searchInput" placeholder="輸入姓名，例如：王小明" autocomplete="off" oninput="onSearchInput(this.value)" />
       <div class="suggest-list" id="suggestList" style="display:none;"></div>
     </div>
@@ -516,7 +525,7 @@ function showFocusFrame(cx, cy, color){
   el.className = 'focus-frame';
   el.style.left = cx+'px';
   el.style.top = cy+'px';
-  el.style.setProperty('--pc', color || '#B8935A');
+  el.style.setProperty('--pc', color || '#E2AD29');
   el.innerHTML = '<span class="corner c-tl"></span><span class="corner c-tr"></span>'+
                   '<span class="corner c-bl"></span><span class="corner c-br"></span>';
   world.appendChild(el);
@@ -538,7 +547,7 @@ function showTitleCard(name, sub, color){
   const vp = document.getElementById('stageViewport');
   const el = document.createElement('div');
   el.className = 'title-card';
-  el.style.setProperty('--pc', color || '#B8935A');
+  el.style.setProperty('--pc', color || '#E2AD29');
   el.innerHTML = '<div class="tc-name">'+escapeHTML(name)+'</div><div class="tc-rule"></div>'+
     (sub ? '<div class="tc-sub">'+escapeHTML(sub)+'</div>' : '');
   vp.appendChild(el);
