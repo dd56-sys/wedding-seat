@@ -573,17 +573,31 @@ function findEntranceLandmark(){
    斜線就有機會貼著桌角、甚至斜著切過別排桌子。改成每一段都先走一個直角轉彎，
    像走廊一樣「先橫再直」或「先直再橫」（取位移量比較大的那個方向先走），不會再有斜線 */
 function toOrthogonalPath(pts){
+  // 路徑點是手動拖曳放的，彼此間難免有十幾、二十幾 px 的小落差，
+  // 每一段都硬轉直角的話，這些小落差會被畫成一堆來回的小彎折，看起來像走了兩次。
+  // 改成：跟目前這條線差距在 SNAP 以內的落差直接吸附、忽略，只有差距夠大才真的轉彎。
+  const SNAP = 35;
   const out = [pts[0]];
   for(let i=1;i<pts.length;i++){
-    const a = out[out.length-1], b = pts[i];
-    const dx = Math.abs(b.x-a.x), dy = Math.abs(b.y-a.y);
-    if(dx>2 && dy>2){
-      const corner = dx>dy ? {x:b.x, y:a.y} : {x:a.x, y:b.y};
+    const a = out[out.length-1];
+    let b = pts[i];
+    const dx = b.x-a.x, dy = b.y-a.y;
+    const smallDx = Math.abs(dx)<=SNAP, smallDy = Math.abs(dy)<=SNAP;
+    if(smallDx && !smallDy){ b = {x:a.x, y:b.y}; }
+    else if(smallDy && !smallDx){ b = {x:b.x, y:a.y}; }
+    else if(!smallDx && !smallDy){
+      const corner = Math.abs(dx)>Math.abs(dy) ? {x:b.x, y:a.y} : {x:a.x, y:b.y};
       out.push(corner);
     }
     out.push(b);
   }
-  return out;
+  // 去掉吸附後幾乎重疊在一起的相鄰點
+  const cleaned = [out[0]];
+  for(let i=1;i<out.length;i++){
+    const p = out[i], q = cleaned[cleaned.length-1];
+    if(Math.hypot(p.x-q.x, p.y-q.y) > 1) cleaned.push(p);
+  }
+  return cleaned;
 }
 
 /* 路徑點是 admin 後台手動放的固定轉折點，依放置順序排成一條主走道。
