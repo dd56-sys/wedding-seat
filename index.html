@@ -596,8 +596,12 @@ function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
   const PAD = 24;
   hx0-=PAD; hy0-=PAD; hx1+=PAD; hy1+=PAD;
 
+  /* CELL 之前是跟搜尋範圍的面積連動的，範圍一大（例如場地裡參照物一多、跨的範圍變大）
+     格子就會跟著變粗，粗到吃掉排跟排中間那種只有十幾 px 的真實走道，BFS 就會直接找不到路，
+     整個退回沒檢查障礙物的保底直線，看起來就像穿過桌子。改成不管範圍多大，格子都封頂在一個
+     夠細的值，最多犧牲一點效能，換取窄走道一定找得到 */
   const wbw = Math.max(1, hx1-hx0), wbh = Math.max(1, hy1-hy0);
-  const CELL = Math.max(8, Math.ceil(Math.sqrt((wbw*wbh)/70000)));
+  const CELL = Math.max(6, Math.min(10, Math.ceil(Math.sqrt((wbw*wbh)/70000))));
   const gx0 = Math.floor(hx0/CELL)-1, gy0 = Math.floor(hy0/CELL)-1;
   const gx1 = Math.ceil(hx1/CELL)+1, gy1 = Math.ceil(hy1/CELL)+1;
   const cols = gx1-gx0, rows = gy1-gy0;
