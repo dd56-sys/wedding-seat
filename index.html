@@ -636,13 +636,23 @@ function buildFixedRoute(entrancePt, targetPt){
       if(Math.hypot(nodes[i].x-nodes[j].x, nodes[i].y-nodes[j].y)<=RADIUS) addEdge(i,j);
     }
   }
+  /* 入口/座位接進網格的方式：優先接到「跟它同一列或同一欄」的路徑點——
+     這代表沿著那條走道走到底就直接對到門口/桌子前面，最後一段不會橫向切過其他桌子。
+     真的完全對不到（例如入口是斜插進網格的點）才退回用半徑接最近的幾個路徑點 */
+  const ALIGN_TOL = 25;
   [START, END].forEach(specialIdx=>{
     const p = allNodes[specialIdx];
-    let connected = false, nearestIdx=-1, nearestD=Infinity;
+    let alignedCount = 0, nearestIdx=-1, nearestD=Infinity;
     for(let i=0;i<nodes.length;i++){
-      const d = Math.hypot(p.x-nodes[i].x, p.y-nodes[i].y);
+      const w = nodes[i];
+      const d = Math.hypot(p.x-w.x, p.y-w.y);
       if(d<nearestD){ nearestD=d; nearestIdx=i; }
-      if(d<=RADIUS){ addEdge(specialIdx, i); connected = true; }
+      if(Math.abs(p.x-w.x)<=ALIGN_TOL || Math.abs(p.y-w.y)<=ALIGN_TOL){ addEdge(specialIdx, i); alignedCount++; }
+    }
+    if(alignedCount>0) return;
+    let connected = false;
+    for(let i=0;i<nodes.length;i++){
+      if(Math.hypot(p.x-nodes[i].x, p.y-nodes[i].y)<=RADIUS){ addEdge(specialIdx, i); connected = true; }
     }
     if(!connected && nearestIdx>=0) addEdge(specialIdx, nearestIdx);
   });
