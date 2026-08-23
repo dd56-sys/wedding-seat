@@ -599,8 +599,12 @@ function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
   const gx1 = Math.ceil(hx1/CELL)+1, gy1 = Math.ceil(hy1/CELL)+1;
   const cols = gx1-gx0, rows = gy1-gy0;
 
+  /* 入口跟座位本身周圍留一小圈保證可以走，避免障礙物的緩衝範圍剛好把起點/終點自己卡死找不到路 */
+  const CLEAR_R = Math.max(CELL*1.5, 20);
   function cellBlocked(cx,cy){
     const px = (gx0+cx+0.5)*CELL, py = (gy0+cy+0.5)*CELL;
+    if(Math.hypot(px-entrancePt.x, py-entrancePt.y) < CLEAR_R) return false;
+    if(Math.hypot(px-targetCenter.x, py-targetCenter.y) < CLEAR_R) return false;
     for(let i=0;i<obstacles.length;i++){
       const r = obstacles[i];
       if(px>r.x0 && px<r.x1 && py>r.y0 && py<r.y1) return true;
@@ -630,7 +634,13 @@ function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
       visited[ni]=1; parent[ni]=ci; qx.push(nx); qy.push(ny);
     }
   }
-  if(!found) return [entrancePt, targetCenter]; // 找不到路就退回直線，至少不會沒有路線
+  if(!found){
+    // 找不到路：退回一個 L 形轉折（先橫再直，取比較不會整段貼著桌子邊緣的那個方向），
+    // 至少看起來像走路轉彎，不會變成一條直接穿過所有桌子的斜線
+    const dx = Math.abs(targetCenter.x-entrancePt.x), dy = Math.abs(targetCenter.y-entrancePt.y);
+    const corner = dx>dy ? {x:targetCenter.x, y:entrancePt.y} : {x:entrancePt.x, y:targetCenter.y};
+    return [entrancePt, corner, targetCenter];
+  }
 
   let cur = idx(goal.cx,goal.cy);
   const cellsPath = [];
