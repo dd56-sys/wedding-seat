@@ -716,16 +716,16 @@ function drawRoute(points, onDone){
     const ptA = pathEl.getPointAtLength(Math.min(len, e*len+2));
     const ang = Math.atan2(ptA.y-pt.y, ptA.x-pt.x) * 180/Math.PI;
     arrowEl.setAttribute('transform', 'translate('+pt.x+','+pt.y+') rotate('+ang+')');
-    if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 200); }
+    if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 80); }
   }
   requestAnimationFrame(frame);
 }
 function fadeRoute(onDone){
   const svg = document.getElementById('routeSvg');
   if(!svg){ if(onDone) onDone(); return; }
-  svg.style.transition = 'opacity .3s ease';
+  svg.style.transition = 'opacity .2s ease';
   svg.style.opacity = '0';
-  setTimeout(onDone, 300);
+  setTimeout(onDone, 200);
 }
 
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
