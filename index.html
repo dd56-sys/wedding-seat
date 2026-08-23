@@ -74,7 +74,7 @@
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
     background-size: 100% 100%, 100% 200%; 
     box-shadow: 0 3px 12px rgba(184,147,90,.4);
-    animation: labelBubblePop .95s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear 3 forwards;
+    animation: labelBubblePop .6s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear 3 forwards;
 
     z-index: 6;
     margin: -12px;
@@ -117,10 +117,10 @@
     border-radius:7px;
     background:#fff;
     animation:
-      bubbleEmerge .95s cubic-bezier(.34,1.56,.64,1) both,
+      bubbleEmerge .6s cubic-bezier(.34,1.56,.64,1) both,
       seatGlow 1.8s ease-in-out 4 forwards,
       bubbleFloat 2.6s ease-in-out 3 forwards;
-    animation-delay: 0s, 0s, .95s;
+    animation-delay: 0s, 0s, .6s;
     z-index:8;
   }
   .pseat.match::before{
@@ -480,7 +480,7 @@ const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
 /* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
 const ZOOM_DELAY_MS = 900;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
-const ZOOM_DURATION_MS = 1700;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
+const ZOOM_DURATION_MS = 1200;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
 const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
 const RACK_FOCUS_BLUR = 2;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
 
