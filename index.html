@@ -600,17 +600,71 @@ function toOrthogonalPath(pts){
   return cleaned;
 }
 
-/* 路徑點是 admin 後台手動放的固定轉折點，依放置順序排成一條主走道。
-   找離座位最近的那個路徑點，沿走道依序走到那一點，再直接切進去——
-   不能用「總距離最短」來挑，因為直接抄近路一定比繞走道短，會變成永遠不走路徑點 */
+/* 路徑點是 admin 後台手動放的（可能放成一整片網格，不是單純一條線），
+   admin 裡放置的先後順序不代表走路順序，不能直接照陣列順序連。
+   改成把路徑點當成一張圖：同一列或同一欄（容許一點誤差）的路徑點才算「路上互通」，
+   入口跟座位各自連到跟它同列/同欄的路徑點（找不到就退回連最近的一個），
+   再用最短路徑（Dijkstra）從入口走到座位，這樣不管路徑點放成一條線還是一整片網格都能走對 */
 function buildFixedRoute(entrancePt, targetPt){
   if(waypoints.length===0) return toOrthogonalPath([entrancePt, targetPt]);
-  let bestIdx = 0, bestDist = Infinity;
-  waypoints.forEach((w,i)=>{
-    const d = Math.hypot(w.x-targetPt.x, w.y-targetPt.y);
-    if(d < bestDist){ bestDist = d; bestIdx = i; }
+
+  /* 用距離而不是「同一列/同一欄」來判斷路徑點之間通不通：手動放的點常常有斜向的
+     連接（例如從入口斜插進主網格的那一個點），嚴格比對列/欄反而會把它孤立出去，
+     Dijkstra 找不到路就整個退回直線。半徑抓得比相鄰路徑點的間距稍大一點即可，
+     就算選到的邊不是正橫正直，畫出來之前也會再經過 toOrthogonalPath 修成直角 */
+  const nodes = waypoints.map(w=>({x:w.x, y:w.y}));
+  const allNodes = nodes.concat([entrancePt, targetPt]);
+  const START = nodes.length, END = nodes.length+1;
+  const M = allNodes.length;
+
+  let maxNearestGap = 0;
+  nodes.forEach((a,i)=>{
+    let nearest = Infinity;
+    nodes.forEach((b,j)=>{ if(i!==j) nearest = Math.min(nearest, Math.hypot(a.x-b.x,a.y-b.y)); });
+    if(isFinite(nearest)) maxNearestGap = Math.max(maxNearestGap, nearest);
   });
-  const pts = [entrancePt].concat(waypoints.slice(0, bestIdx+1).map(w=>({x:w.x, y:w.y}))).concat([targetPt]);
+  const RADIUS = Math.max(300, maxNearestGap*1.5);
+
+  const adj = Array.from({length:M}, ()=>[]);
+  function addEdge(i,j){
+    const d = Math.hypot(allNodes[i].x-allNodes[j].x, allNodes[i].y-allNodes[j].y);
+    adj[i].push({to:j, d});
+    adj[j].push({to:i, d});
+  }
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      if(Math.hypot(nodes[i].x-nodes[j].x, nodes[i].y-nodes[j].y)<=RADIUS) addEdge(i,j);
+    }
+  }
+  [START, END].forEach(specialIdx=>{
+    const p = allNodes[specialIdx];
+    let connected = false, nearestIdx=-1, nearestD=Infinity;
+    for(let i=0;i<nodes.length;i++){
+      const d = Math.hypot(p.x-nodes[i].x, p.y-nodes[i].y);
+      if(d<nearestD){ nearestD=d; nearestIdx=i; }
+      if(d<=RADIUS){ addEdge(specialIdx, i); connected = true; }
+    }
+    if(!connected && nearestIdx>=0) addEdge(specialIdx, nearestIdx);
+  });
+
+  const dist = new Array(M).fill(Infinity);
+  const prev = new Array(M).fill(-1);
+  const visited = new Array(M).fill(false);
+  dist[START] = 0;
+  for(let iter=0; iter<M; iter++){
+    let u=-1, best=Infinity;
+    for(let i=0;i<M;i++){ if(!visited[i] && dist[i]<best){ best=dist[i]; u=i; } }
+    if(u===-1) break;
+    visited[u]=true;
+    if(u===END) break;
+    adj[u].forEach(e=>{ if(dist[u]+e.d < dist[e.to]){ dist[e.to]=dist[u]+e.d; prev[e.to]=u; } });
+  }
+  if(!isFinite(dist[END])) return toOrthogonalPath([entrancePt, targetPt]); // 圖真的連不到座位就退回直線
+
+  const pathIdx = [];
+  for(let cur=END; cur!==-1; cur=prev[cur]) pathIdx.push(cur);
+  pathIdx.reverse();
+  const pts = pathIdx.map(i=>({x:allNodes[i].x, y:allNodes[i].y}));
   return toOrthogonalPath(pts);
 }
 
