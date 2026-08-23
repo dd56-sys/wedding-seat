@@ -415,9 +415,19 @@ async function loadData(){
 }
 
 function computeWorldBounds(){
-  let minX=0,minY=0,maxX=1200,maxY=800;
-  tables.forEach(t=>{ maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280); });
-  landmarks.forEach(l=>{ maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40); });
+  if(tables.length===0 && landmarks.length===0){
+    worldBounds = {minX:0, minY:0, maxX:1200, maxY:800};
+    return;
+  }
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  tables.forEach(t=>{
+    minX=Math.min(minX, t.x-40); minY=Math.min(minY, t.y-30);
+    maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280);
+  });
+  landmarks.forEach(l=>{
+    minX=Math.min(minX, l.x-40); minY=Math.min(minY, l.y-40);
+    maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40);
+  });
   worldBounds = {minX, minY, maxX, maxY};
 }
 
@@ -720,13 +730,6 @@ function drawRoute(points, onDone){
   }
   requestAnimationFrame(frame);
 }
-function fadeRoute(onDone){
-  const svg = document.getElementById('routeSvg');
-  if(!svg){ if(onDone) onDone(); return; }
-  svg.style.transition = 'opacity .2s ease';
-  svg.style.opacity = '0';
-  setTimeout(onDone, 200);
-}
 
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
 function focusOn(bounds, immediate, focusColor, primaryTable){
@@ -774,7 +777,7 @@ function focusOn(bounds, immediate, focusColor, primaryTable){
     const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
     const route = findRoute(entrancePt, primaryTable, obstacles, tableW, tableH);
     setTimeout(()=>{
-      drawRoute(route, ()=> fadeRoute(doZoom));
+      drawRoute(route, doZoom);
     }, ZOOM_DELAY_MS);
   } else {
     const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
@@ -808,9 +811,10 @@ function initGestures(){
   vp.addEventListener('pointerdown', (e)=>{
     vp.setPointerCapture(e.pointerId);
     if(activePointers.size===0){ currentT = readRenderedTransform(); document.getElementById('stageWorld').style.transition='none'; }
-    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    const rect0 = vp.getBoundingClientRect();
+    activePointers.set(e.pointerId, {x:e.clientX-rect0.left, y:e.clientY-rect0.top});
     if(activePointers.size===1){
-      panStart = { x:e.clientX, y:e.clientY, tx0:currentT.tx, ty0:currentT.ty };
+      panStart = { x:e.clientX-rect0.left, y:e.clientY-rect0.top, tx0:currentT.tx, ty0:currentT.ty };
     } else if(activePointers.size===2){
       const pts = Array.from(activePointers.values());
       pinchStartDist = dist(pts[0], pts[1]);
@@ -823,9 +827,11 @@ function initGestures(){
   });
   vp.addEventListener('pointermove', (e)=>{
     if(!activePointers.has(e.pointerId)) return;
-    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    const rectM = vp.getBoundingClientRect();
+    const px = e.clientX-rectM.left, py = e.clientY-rectM.top;
+    activePointers.set(e.pointerId, {x:px, y:py});
     if(activePointers.size===1 && panStart){
-      const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+      const dx = px - panStart.x, dy = py - panStart.y;
       applyTransform({scale:currentT.scale, tx:panStart.tx0+dx, ty:panStart.ty0+dy}, false);
     } else if(activePointers.size===2 && pinchStartDist){
       const pts = Array.from(activePointers.values());
