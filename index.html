@@ -569,17 +569,35 @@ function findEntranceLandmark(){
   return landmarks.find(l => l.name && l.name.indexOf('入口') !== -1) || null;
 }
 
+/* 路徑點之間直接用直線連，只要兩點沒有完全對齊（同一個 x 或同一個 y），
+   斜線就有機會貼著桌角、甚至斜著切過別排桌子。改成每一段都先走一個直角轉彎，
+   像走廊一樣「先橫再直」或「先直再橫」（取位移量比較大的那個方向先走），不會再有斜線 */
+function toOrthogonalPath(pts){
+  const out = [pts[0]];
+  for(let i=1;i<pts.length;i++){
+    const a = out[out.length-1], b = pts[i];
+    const dx = Math.abs(b.x-a.x), dy = Math.abs(b.y-a.y);
+    if(dx>2 && dy>2){
+      const corner = dx>dy ? {x:b.x, y:a.y} : {x:a.x, y:b.y};
+      out.push(corner);
+    }
+    out.push(b);
+  }
+  return out;
+}
+
 /* 路徑點是 admin 後台手動放的固定轉折點，依放置順序排成一條主走道。
    找離座位最近的那個路徑點，沿走道依序走到那一點，再直接切進去——
    不能用「總距離最短」來挑，因為直接抄近路一定比繞走道短，會變成永遠不走路徑點 */
 function buildFixedRoute(entrancePt, targetPt){
-  if(waypoints.length===0) return [entrancePt, targetPt];
+  if(waypoints.length===0) return toOrthogonalPath([entrancePt, targetPt]);
   let bestIdx = 0, bestDist = Infinity;
   waypoints.forEach((w,i)=>{
     const d = Math.hypot(w.x-targetPt.x, w.y-targetPt.y);
     if(d < bestDist){ bestDist = d; bestIdx = i; }
   });
-  return [entrancePt].concat(waypoints.slice(0, bestIdx+1).map(w=>({x:w.x, y:w.y}))).concat([targetPt]);
+  const pts = [entrancePt].concat(waypoints.slice(0, bestIdx+1).map(w=>({x:w.x, y:w.y}))).concat([targetPt]);
+  return toOrthogonalPath(pts);
 }
 
 function ensureRouteSvg(){
