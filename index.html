@@ -582,14 +582,22 @@ function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
 
 /* 粗略網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點 */
 function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
-  const wbw = Math.max(1, worldBounds.maxX-worldBounds.minX), wbh = Math.max(1, worldBounds.maxY-worldBounds.minY);
-  const CELL = Math.max(10, Math.ceil(Math.sqrt((wbw*wbh)/40000)));
-  const gx0 = Math.floor(worldBounds.minX/CELL)-2, gy0 = Math.floor(worldBounds.minY/CELL)-2;
-  const gx1 = Math.ceil(worldBounds.maxX/CELL)+2, gy1 = Math.ceil(worldBounds.maxY/CELL)+2;
-  const cols = gx1-gx0, rows = gy1-gy0;
-
   const targetRect = {x0:targetTable.x, y0:targetTable.y, x1:targetTable.x+tableW, y1:targetTable.y+tableH};
   const targetCenter = {x:(targetRect.x0+targetRect.x1)/2, y:(targetRect.y0+targetRect.y1)/2};
+
+  /* 搜尋範圍只框住「障礙物本身 + 入口 + 座位」的緊密範圍，不要留 worldBounds 那種給總覽用的大片留白，
+     不然 BFS 會發現繞去會場外面那圈空地反而路徑比較短，導致路線繞到桌子外圍去而不是走裡面的走道 */
+  let hx0=Math.min(entrancePt.x, targetCenter.x), hy0=Math.min(entrancePt.y, targetCenter.y);
+  let hx1=Math.max(entrancePt.x, targetCenter.x), hy1=Math.max(entrancePt.y, targetCenter.y);
+  obstacles.forEach(r=>{ hx0=Math.min(hx0,r.x0); hy0=Math.min(hy0,r.y0); hx1=Math.max(hx1,r.x1); hy1=Math.max(hy1,r.y1); });
+  const PAD = 24;
+  hx0-=PAD; hy0-=PAD; hx1+=PAD; hy1+=PAD;
+
+  const wbw = Math.max(1, hx1-hx0), wbh = Math.max(1, hy1-hy0);
+  const CELL = Math.max(10, Math.ceil(Math.sqrt((wbw*wbh)/40000)));
+  const gx0 = Math.floor(hx0/CELL)-1, gy0 = Math.floor(hy0/CELL)-1;
+  const gx1 = Math.ceil(hx1/CELL)+1, gy1 = Math.ceil(hy1/CELL)+1;
+  const cols = gx1-gx0, rows = gy1-gy0;
 
   function cellBlocked(cx,cy){
     const px = (gx0+cx+0.5)*CELL, py = (gy0+cy+0.5)*CELL;
