@@ -241,6 +241,12 @@
   .stage-zoom-hint{position:absolute;top:8px;right:10px;z-index:10;font-size:10.5px;color:var(--ink-soft);
     background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px;pointer-events:none;}
 
+  /* 從入口沿走道畫到座位的引導路線 */
+  .route-svg{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:20;opacity:0;}
+  #routePathEl{fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;
+    filter:drop-shadow(0 2px 3px rgba(226,173,41,.35));}
+  #routeArrowEl{fill:var(--gold);opacity:0;}
+
   /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 */
   .focus-frame{position:absolute;width:124px;height:124px;margin:-32px 0 0 -32px;pointer-events:none;z-index:15;
     animation:focusHunt 4s cubic-bezier(.2,.8,.2,1) both;}
@@ -556,8 +562,149 @@ function showTitleCard(name, sub, color){
   setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 2900);
 }*/
 
+/* ---- 走道路線：從入口參照物走到座位，自動繞開桌子與其他參照物 ---- */
+function findEntranceLandmark(){
+  return landmarks.find(l => l.name && l.name.indexOf('入口') !== -1) || null;
+}
+
+function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
+  const rects = [];
+  tables.forEach(t=>{
+    if(t.id===excludeTableId) return; // 目標桌子本身不當障礙物，讓路徑能走到桌邊
+    rects.push({x0:t.x-4, y0:t.y-4, x1:t.x+tableW+4, y1:t.y+tableH+4});
+  });
+  landmarks.forEach(l=>{
+    if(entranceLandmark && l===entranceLandmark) return; // 入口本身不擋路
+    rects.push({x0:l.x-4, y0:l.y-4, x1:l.x+l.w+4, y1:l.y+l.h+4});
+  });
+  return rects;
+}
+
+/* 粗略網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點 */
+function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
+  const wbw = Math.max(1, worldBounds.maxX-worldBounds.minX), wbh = Math.max(1, worldBounds.maxY-worldBounds.minY);
+  const CELL = Math.max(10, Math.ceil(Math.sqrt((wbw*wbh)/40000)));
+  const gx0 = Math.floor(worldBounds.minX/CELL)-2, gy0 = Math.floor(worldBounds.minY/CELL)-2;
+  const gx1 = Math.ceil(worldBounds.maxX/CELL)+2, gy1 = Math.ceil(worldBounds.maxY/CELL)+2;
+  const cols = gx1-gx0, rows = gy1-gy0;
+
+  const targetRect = {x0:targetTable.x, y0:targetTable.y, x1:targetTable.x+tableW, y1:targetTable.y+tableH};
+  const targetCenter = {x:(targetRect.x0+targetRect.x1)/2, y:(targetRect.y0+targetRect.y1)/2};
+
+  function cellBlocked(cx,cy){
+    const px = (gx0+cx+0.5)*CELL, py = (gy0+cy+0.5)*CELL;
+    for(let i=0;i<obstacles.length;i++){
+      const r = obstacles[i];
+      if(px>r.x0 && px<r.x1 && py>r.y0 && py<r.y1) return true;
+    }
+    return false;
+  }
+  function toCell(pt){ return { cx: Math.round(pt.x/CELL)-gx0, cy: Math.round(pt.y/CELL)-gy0 }; }
+
+  const start = toCell(entrancePt);
+  const goal = toCell(targetCenter);
+  const idx = (cx,cy)=> cy*cols+cx;
+  const visited = new Uint8Array(cols*rows);
+  const parent = new Int32Array(cols*rows).fill(-1);
+  const qx=[start.cx], qy=[start.cy];
+  visited[idx(start.cx,start.cy)] = 1;
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  let head=0, found=false;
+  while(head<qx.length){
+    const cx=qx[head], cy=qy[head]; const ci=idx(cx,cy); head++;
+    if(cx===goal.cx && cy===goal.cy){ found=true; break; }
+    for(let d=0; d<dirs.length; d++){
+      const nx=cx+dirs[d][0], ny=cy+dirs[d][1];
+      if(nx<0||ny<0||nx>=cols||ny>=rows) continue;
+      const ni=idx(nx,ny);
+      if(visited[ni]) continue;
+      if(cellBlocked(nx,ny)) continue;
+      visited[ni]=1; parent[ni]=ci; qx.push(nx); qy.push(ny);
+    }
+  }
+  if(!found) return [entrancePt, targetCenter]; // 找不到路就退回直線，至少不會沒有路線
+
+  let cur = idx(goal.cx,goal.cy);
+  const cellsPath = [];
+  while(cur!==-1){ const cy=Math.floor(cur/cols), cx=cur-cy*cols; cellsPath.push({cx,cy}); cur=parent[cur]; }
+  cellsPath.reverse();
+
+  let pts = cellsPath.map(c=> ({x:(gx0+c.cx+0.5)*CELL, y:(gy0+c.cy+0.5)*CELL}));
+  pts[0] = entrancePt;
+
+  /* 路徑一進入目標桌子的範圍就截斷，讓箭頭停在桌邊而不是穿進桌子中心 */
+  const inset = 4;
+  let cutIndex = pts.length-1;
+  for(let i=0;i<pts.length;i++){
+    const p = pts[i];
+    if(p.x>targetRect.x0+inset && p.x<targetRect.x1-inset && p.y>targetRect.y0+inset && p.y<targetRect.y1-inset){ cutIndex=i; break; }
+  }
+  pts = pts.slice(0, cutIndex+1);
+  if(pts.length<2) pts.push(targetCenter);
+
+  /* 去掉共線的中間點，變成幾段直線轉折，而不是網格鋸齒 */
+  const simplified = [pts[0]];
+  for(let i=1;i<pts.length-1;i++){
+    const a=simplified[simplified.length-1], b=pts[i], c=pts[i+1];
+    const collinear = Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)) < 1;
+    if(!collinear) simplified.push(b);
+  }
+  simplified.push(pts[pts.length-1]);
+  return simplified;
+}
+
+function ensureRouteSvg(){
+  let svg = document.getElementById('routeSvg');
+  if(svg) return svg;
+  const world = document.getElementById('stageWorld');
+  svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('id','routeSvg');
+  svg.setAttribute('class','route-svg');
+  svg.innerHTML = '<path id="routePathEl"></path><g id="routeArrowEl"><polygon points="0,-9 15,0 0,9"></polygon></g>';
+  world.appendChild(svg);
+  return svg;
+}
+
+function drawRoute(points, onDone){
+  const world = document.getElementById('stageWorld');
+  const svg = ensureRouteSvg();
+  svg.setAttribute('width', parseFloat(world.style.width)||0);
+  svg.setAttribute('height', parseFloat(world.style.height)||0);
+  svg.style.transition = 'none';
+  svg.style.opacity = '1';
+  const pathEl = document.getElementById('routePathEl');
+  const arrowEl = document.getElementById('routeArrowEl');
+  const d = 'M'+points.map(p=> p.x.toFixed(1)+','+p.y.toFixed(1)).join(' L ');
+  pathEl.setAttribute('d', d);
+  const len = pathEl.getTotalLength();
+  pathEl.style.strokeDasharray = len;
+  pathEl.style.strokeDashoffset = len;
+  arrowEl.style.opacity = '1';
+
+  const dur = Math.max(700, Math.min(1800, len*1.1)); // 依路徑長度決定速度，太短太長都設個上下限
+  const start = performance.now();
+  function frame(now){
+    const p = Math.min(1, (now-start)/dur);
+    const e = 1 - Math.pow(1-p, 3);
+    pathEl.style.strokeDashoffset = len*(1-e);
+    const pt = pathEl.getPointAtLength(e*len);
+    const ptA = pathEl.getPointAtLength(Math.min(len, e*len+2));
+    const ang = Math.atan2(ptA.y-pt.y, ptA.x-pt.x) * 180/Math.PI;
+    arrowEl.setAttribute('transform', 'translate('+pt.x+','+pt.y+') rotate('+ang+')');
+    if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 200); }
+  }
+  requestAnimationFrame(frame);
+}
+function fadeRoute(onDone){
+  const svg = document.getElementById('routeSvg');
+  if(!svg){ if(onDone) onDone(); return; }
+  svg.style.transition = 'opacity .3s ease';
+  svg.style.opacity = '0';
+  setTimeout(onDone, 300);
+}
+
 let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
-function focusOn(bounds, immediate, focusColor, titleName, titleSub){
+function focusOn(bounds, immediate, focusColor, primaryTable){
   const vp = document.getElementById('stageViewport');
   lastViewportW = vp.clientWidth;
   const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, 0.92);
@@ -565,23 +712,19 @@ function focusOn(bounds, immediate, focusColor, titleName, titleSub){
   void vp.offsetWidth; // force reflow
   clearFocusFrame();
   vp.classList.remove('cinematic');
+  const existingRoute = document.getElementById('routeSvg');
+  if(existingRoute){ existingRoute.style.transition='none'; existingRoute.style.opacity='0'; }
+
   if(immediate){
     lastFocusBounds = worldBounds; lastFocusMargin = 0.92;
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
 
-  const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
-  showFocusFrame(cx, cy, focusColor);
-  document.getElementById('stageWorld').style.filter = 'blur('+RACK_FOCUS_BLUR+'px)'; // 先稍微失焦，醞釀期待感
-
-  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
-  setTimeout(()=>{
-    clearFocusFrame();
+  function doZoom(){
     vp.classList.add('cinematic'); // 電影黑邊滑入 + 底片顆粒浮現
-    //showLensFlare(ZOOM_DURATION_MS); // 光暈隨運鏡掃過畫面
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
-    applyTransform(targetT, true, 0); // 運鏡拉近的同時，景深也一起慢慢對焦清晰
+    applyTransform(targetT, true, 0);
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
 
@@ -592,9 +735,28 @@ function focusOn(bounds, immediate, focusColor, titleName, titleSub){
 
     setTimeout(()=>{
       vp.classList.remove('cinematic'); // 安頓後黑邊與顆粒收回
-      // 開場字卡功能目前停用中（showTitleCard 已被註解掉），故不呼叫
     }, ZOOM_DURATION_MS + 600);
-  }, ZOOM_DELAY_MS);
+  }
+
+  const entranceLandmark = primaryTable ? findEntranceLandmark() : null;
+
+  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
+  if(entranceLandmark){
+    const entrancePt = { x: entranceLandmark.x + entranceLandmark.w/2, y: entranceLandmark.y + entranceLandmark.h };
+    const sampleTable = document.querySelector('.ptable');
+    const tableW = sampleTable ? sampleTable.offsetWidth : 250;
+    const tableH = sampleTable ? sampleTable.offsetHeight : 260;
+    const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
+    const route = findRoute(entrancePt, primaryTable, obstacles, tableW, tableH);
+    setTimeout(()=>{
+      drawRoute(route, ()=> fadeRoute(doZoom));
+    }, ZOOM_DELAY_MS);
+  } else {
+    const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
+    showFocusFrame(cx, cy, focusColor);
+    document.getElementById('stageWorld').style.filter = 'blur('+RACK_FOCUS_BLUR+'px)'; // 先稍微失焦，醞釀期待感
+    setTimeout(()=>{ clearFocusFrame(); doZoom(); }, ZOOM_DELAY_MS);
+  }
 }
 function recenter(){
   if(!lastFocusBounds) return;
@@ -763,8 +925,7 @@ function runSearch(baseName){
     const focusColor = mealColor(seatedMatched[0].meal);
     const primary = seatedMatched[0];
     const primaryTable = tables.find(x=>x.id===primary.tableId);
-    const primaryLabel = primaryTable ? (primary.seatIndex<3 ? (primaryTable.topName||(primaryTable.no+'A')) : (primaryTable.bottomName||(primaryTable.no+'B'))) : '';
-    focusOn({minX,minY,maxX,maxY}, false, focusColor, baseName, primaryLabel);
+    focusOn({minX,minY,maxX,maxY}, false, focusColor, primaryTable);
   } else {
     focusOn(worldBounds, true);
   }
