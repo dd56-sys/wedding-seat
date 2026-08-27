@@ -141,6 +141,9 @@
   .landmark-label{position:absolute;left:50%;bottom:-22px;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;
     background:#fff;border:1.5px dashed var(--gold);border-radius:10px;padding:1px 8px;cursor:pointer;}
   .landmark-label:hover{background:var(--gold-light);border-style:solid;}
+  .landmark-block{position:absolute;bottom:-8px;left:-8px;width:18px;height:18px;border-radius:50%;background:#fff;
+    border:1px solid var(--line);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .landmark-block.blocking{border-color:var(--danger);background:#fdeceb;}
   .table-topbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px 2px;}
   .table-no{display:inline-flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:11px;font-weight:600;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .table-del{font-size:13px;color:#c9bdae;padding:2px 6px;border-radius:4px;}
@@ -1370,11 +1373,13 @@ function seatCellHTML(t,i){
 }
 function landmarkHTML(l){
   const locked = !!l.locked;
+  const blocks = !!l.blocksRoute;
   return '<div class="landmark'+(locked?' locked':'')+'" id="landmark-'+l.id+'" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
     '<img src="'+l.url+'" alt="" draggable="false" onpointerdown="onLandmarkPointerDown(event,\''+l.id+'\')" />'+
     '<span class="landmark-lock" onclick="toggleLandmarkLock(\''+l.id+'\')" title="'+(locked?'解鎖位置':'鎖定位置')+'">'+(locked?'🔒':'🔓')+'</span>'+
     '<span class="landmark-del" onclick="onDeleteLandmark(\''+l.id+'\')" title="刪除參照物">✕</span>'+
     (locked ? '' : '<span class="landmark-resize" onpointerdown="onLandmarkResizeStart(event,\''+l.id+'\')" title="拖曳調整大小">⤡</span>')+
+    '<span class="landmark-block'+(blocks?' blocking':'')+'" onclick="toggleLandmarkBlock(\''+l.id+'\')" title="'+(blocks?'會擋住賓客頁的走道路線（點擊改成不擋路）':'不會擋住賓客頁的走道路線（點擊改成擋路）')+'">'+(blocks?'🚧':'🚶')+'</span>'+
     '<span class="landmark-label" onclick="renameLandmark(\''+l.id+'\')" title="點選重新命名">'+escapeHTML(l.name||'參照物')+'</span>'+
   '</div>';
 }
@@ -1497,6 +1502,12 @@ function toggleLandmarkLock(id){
   const l = landmarks.find(x=>x.id===id);
   if(!l) return;
   l.locked = !l.locked;
+  render();
+}
+function toggleLandmarkBlock(id){
+  const l = landmarks.find(x=>x.id===id);
+  if(!l) return;
+  l.blocksRoute = !l.blocksRoute;
   render();
 }
 async function handleLandmarkUpload(file){
