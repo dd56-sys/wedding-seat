@@ -141,9 +141,6 @@
   .landmark-label{position:absolute;left:50%;bottom:-22px;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;
     background:#fff;border:1.5px dashed var(--gold);border-radius:10px;padding:1px 8px;cursor:pointer;}
   .landmark-label:hover{background:var(--gold-light);border-style:solid;}
-  .landmark-block{position:absolute;bottom:-8px;left:-8px;width:18px;height:18px;border-radius:50%;background:#fff;
-    border:1px solid var(--line);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .landmark-block.blocking{border-color:var(--danger);background:#fdeceb;}
   .table-topbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px 2px;}
   .table-no{display:inline-flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:11px;font-weight:600;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
   .table-del{font-size:13px;color:#c9bdae;padding:2px 6px;border-radius:4px;}
@@ -1100,6 +1097,7 @@ async function connectSupabase(){
       tables = data.data.tables || [];
       landmarks = data.data.landmarks || [];
       recalcSeq();
+      if(guests.length>0 || tables.length>0) everHadData = true;
       render();
       isApplyingRemote = false;
       setSyncStatus('已載入雲端資料 · '+nowStr(), 'ok');
@@ -1120,14 +1118,23 @@ function disconnectSupabase(){
   realtimeChannel=null; supabaseClient=null; syncEventCode=null;
   setSyncStatus('已中斷雲端同步');
 }
+let everHadData = false; // 只要曾經載入或擁有過賓客/桌子資料，就標記起來，之後拒絕存入「突然全空」的狀態
 function scheduleSave(){
   if(!supabaseClient || isApplyingRemote) return;
+  if(guests.length>0 || tables.length>0) everHadData = true;
   clearTimeout(saveTimer);
   setSyncStatus('編輯中，即將同步...', 'busy');
   saveTimer = setTimeout(saveToCloud, 900);
 }
 async function saveToCloud(){
   if(!supabaseClient) return;
+  if(everHadData && guests.length===0 && tables.length===0){
+    // 安全防呆：曾經有資料，現在卻突然變成完全空白，很可能是載入異常或誤觸清空，
+    // 為了保護雲端既有資料，這裡直接擋下，不會自動存成空白覆蓋掉原本內容。
+    setSyncStatus('偵測到資料異常清空，已暫停自動同步以保護雲端資料', 'err');
+    console.warn('saveToCloud blocked: guests/tables both empty after previously having data.');
+    return;
+  }
   try{
     setSyncStatus('同步中...', 'busy');
     const { error } = await supabaseClient.from('wedding_seating_data').upsert({
@@ -1150,6 +1157,7 @@ function subscribeRealtime(){
         tables = payload.new.data.tables || [];
         landmarks = payload.new.data.landmarks || [];
         recalcSeq();
+        if(guests.length>0 || tables.length>0) everHadData = true;
         render();
         isApplyingRemote = false;
         setSyncStatus('已從其他裝置同步 · '+nowStr(), 'ok');
@@ -1263,13 +1271,11 @@ function seatCellHTML(t,i){
 }
 function landmarkHTML(l){
   const locked = !!l.locked;
-  const blocks = !!l.blocksRoute;
   return '<div class="landmark'+(locked?' locked':'')+'" id="landmark-'+l.id+'" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
     '<img src="'+l.url+'" alt="" draggable="false" onpointerdown="onLandmarkPointerDown(event,\''+l.id+'\')" />'+
     '<span class="landmark-lock" onclick="toggleLandmarkLock(\''+l.id+'\')" title="'+(locked?'解鎖位置':'鎖定位置')+'">'+(locked?'🔒':'🔓')+'</span>'+
     '<span class="landmark-del" onclick="onDeleteLandmark(\''+l.id+'\')" title="刪除參照物">✕</span>'+
     (locked ? '' : '<span class="landmark-resize" onpointerdown="onLandmarkResizeStart(event,\''+l.id+'\')" title="拖曳調整大小">⤡</span>')+
-    '<span class="landmark-block'+(blocks?' blocking':'')+'" onclick="toggleLandmarkBlock(\''+l.id+'\')" title="'+(blocks?'會擋住賓客頁的走道路線（點擊改成不擋路）':'不會擋住賓客頁的走道路線（點擊改成擋路）')+'">'+(blocks?'🚧':'🚶')+'</span>'+
     '<span class="landmark-label" onclick="renameLandmark(\''+l.id+'\')" title="點選重新命名">'+escapeHTML(l.name||'參照物')+'</span>'+
   '</div>';
 }
@@ -1394,13 +1400,6 @@ function toggleLandmarkLock(id){
   l.locked = !l.locked;
   render();
 }
-function toggleLandmarkBlock(id){
-  const l = landmarks.find(x=>x.id===id);
-  if(!l) return;
-  l.blocksRoute = !l.blocksRoute;
-  render();
-}
-
 async function handleLandmarkUpload(file){
   if(!supabaseClient){ alert('請先完成登入與雲端連線後再上傳圖片'); return; }
   if(!file) return;
@@ -1459,9 +1458,6 @@ async function doLogout(){
 async function onLoginSuccess(){
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('appRoot').style.display = 'block';
-  addTable();
-  addTable();
-  render();
   await startCloudSync();
 }
 
@@ -1475,28 +1471,31 @@ async function startCloudSync(){
     document.getElementById('sbCode').readOnly = true;
     document.getElementById('btnConnect').style.display = 'none';
     syncEventCode = CFG.EVENT_CODE;
-    supabaseClient = authClient;
     setSyncStatus('已登入，載入雲端資料中...', 'busy');
+    // 注意：在確認雲端資料讀取成功之前，絕對不能把 supabaseClient 設成非 null，
+    // 否則畫面上任何一次 render() 都可能觸發 scheduleSave()，
+    // 用「還沒讀到的空白狀態」覆蓋掉雲端原本的真實資料。
     try{
-      const { data, error } = await supabaseClient.from('wedding_seating_data').select('data').eq('event_code', syncEventCode).maybeSingle();
+      const client = authClient;
+      const { data, error } = await client.from('wedding_seating_data').select('data').eq('event_code', syncEventCode).maybeSingle();
       if(error) throw error;
-      if(data && data.data && (data.data.guests || data.data.tables || data.data.landmarks)){
-        isApplyingRemote = true;
-        guests = data.data.guests || [];
-        tables = data.data.tables || [];
-        landmarks = data.data.landmarks || [];
-        recalcSeq();
-        render();
-        isApplyingRemote = false;
-        setSyncStatus('已載入雲端資料 · '+nowStr(), 'ok');
-      } else {
-        setSyncStatus('已連接，尚無雲端資料，正在建立...', 'busy');
-        await saveToCloud();
-      }
+      isApplyingRemote = true;
+      guests = (data && data.data && data.data.guests) || [];
+      tables = (data && data.data && data.data.tables) || [];
+      landmarks = (data && data.data && data.data.landmarks) || [];
+      recalcSeq();
+      if(guests.length>0 || tables.length>0) everHadData = true;
+      render();
+      isApplyingRemote = false;
+      // 讀取成功後才允許之後的變更自動同步回雲端
+      supabaseClient = client;
+      setSyncStatus(data ? ('已載入雲端資料 · '+nowStr()) : '已連接，尚無雲端資料，開始編輯後會自動建立', 'ok');
       subscribeRealtime();
     }catch(err){
       console.error(err);
-      setSyncStatus('讀取失敗：'+(err.message||err), 'err');
+      supabaseClient = null; // 讀取失敗時絕不能允許自動儲存，避免覆蓋雲端既有資料
+      setSyncStatus('讀取失敗，已暫停自動同步以保護雲端資料：'+(err.message||err), 'err');
+      alert('雲端座位資料讀取失敗！為了保護你原本的資料，已經暫停自動同步——現在畫面上看到的任何東西都「不會」被存回雲端。\n\n請重新整理頁面再試一次；如果一直失敗，請先聯絡技術協助，不要繼續編輯。');
     }
   } else {
     setSyncStatus('未偵測到 config.js，可於下方手動輸入連線設定');
