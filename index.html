@@ -10,8 +10,8 @@
 <script src="config.js" onerror="window.APP_CONFIG=window.APP_CONFIG||{}"></script>
 <style>
   :root{
-    --ivory:#FFFDF8; --card:#FFFFFF; --ink:#26221E; --ink-soft:#8C8177;
-    --gold:#E2AD29; --gold-deep:#B9860F; --gold-light:#FBEFD0; --line:#EDE6D6; --danger:#B85C5C;
+    --ivory:#FAF6EF; --card:#FFFFFF; --ink:#332C27; --ink-soft:#6E645A;
+    --gold:#B8935A; --gold-light:#EFE2C9; --line:#E7DED2; --danger:#B85C5C;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--ivory);color:var(--ink);font-family:'Noto Sans TC',sans-serif;
@@ -22,34 +22,30 @@
 
   .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
 
-  .header{padding:32px 24px 20px;}
-  .header-eyebrow{display:flex;align-items:baseline;justify-content:space-between;}
-  .header-eyebrow .eyebrow-en{font-size:11px;letter-spacing:3px;color:var(--gold);font-weight:700;}
-  .header-eyebrow .eyebrow-zh{font-size:11px;letter-spacing:2px;color:var(--ink-soft);}
-  .header h1{margin-top:14px;font-size:32px;line-height:1.15;font-weight:700;color:var(--ink);}
-  .header h1 .amp{color:var(--gold);}
+  .header{padding:22px 20px 14px;text-align:center;background:linear-gradient(180deg,#fffdf9,var(--ivory));border-bottom:1px solid var(--line);}
+  .header h1{font-size:18px;letter-spacing:1.5px;}
+  .header .rule{width:70px;height:2px;margin:8px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .header p{margin:0;font-size:15.5px;color:var(--ink-soft);letter-spacing:.5px;}
 
   .search-area{padding:16px 18px;position:relative;z-index:30;}
   .suggest-overlay{position:fixed;inset:0;background:rgba(20,16,12,.45);z-index:25;opacity:0;pointer-events:none;transition:opacity .2s ease;}
   .suggest-overlay.show{opacity:1;pointer-events:auto;}
   .search-box{position:relative;}
-  .search-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--gold);pointer-events:none;z-index:1;}
-  .search-input{width:100%;padding:15px 20px 15px 46px;font-size:16px;border:1.5px solid var(--gold-light);border-radius:26px;background:#fff;color:var(--ink);text-align:left;box-shadow:0 10px 22px rgba(226,173,41,.14);}
+  .search-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-align: center;}
   .search-input:focus{outline:none;border-color:var(--gold);}
-  .search-input::placeholder{color:var(--ink-soft);opacity:.75;}
-  .search-hint{font-size:15px;color:var(--ink-soft);margin-top:10px;line-height:1.7;text-align:center;}
+  .search-hint{font-size:16px;color:var(--ink-soft);margin-top:6px;padding-left:2px;}
 
-  .suggest-list{position:absolute;left:18px;right:18px;top:60px;background:#fff;border:1px solid var(--line);
-    border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
+  .suggest-list{position:absolute;left:18px;right:18px;top:56px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.1);z-index:30;overflow:hidden;max-height:260px;overflow-y:auto;}
   .suggest-item{padding:12px 16px;font-size:15px;font-weight:600;border-bottom:1px solid var(--line);text-align: center;}
   .suggest-item:last-child{border-bottom:none;}
   .suggest-item:active{background:var(--gold-light);}
   .suggest-empty{padding:14px 16px;font-size:13px;color:var(--ink-soft);text-align:center;}
 
   .stage-section{padding:0 18px 8px;flex:1;display:flex;flex-direction:column;}
-  .stage-viewport{position:relative;width:100%;height:38vh;min-height:230px;background:#FBF8F1;
-    background-image:radial-gradient(circle,#EFE4CC 1px,transparent 1px);background-size:22px 22px;
-    border:1px solid var(--line);border-radius:20px;overflow:hidden;}
+  .stage-viewport{position:relative;width:100%;height:48vh;min-height:300px;background:#F6F1E8;
+    background-image:radial-gradient(circle,#e4dac6 1px,transparent 1px);background-size:22px 22px;
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   .stage-world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;}
   .stage-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     color:var(--ink-soft);font-size:13px;text-align:center;padding:20px;pointer-events:none;}
@@ -70,15 +66,15 @@
     border-radius: 99em;
     padding: 5px 20px;
     font-size: 24px;
-    color: var(--gold-deep);
+    color: #E99729;
     background:
-        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(#fff, #fff) padding-box, 
         /* 【關鍵1】明確寫出 0%, 25%, 50%, 75%, 100%，確保顏色對稱分布 */
-        linear-gradient(180deg, #ffffff 0%, var(--gold) 25%, #ffffff 50%, var(--gold) 75%, #ffffff 100%) border-box;
+        linear-gradient(180deg, #ffffff 0%, #E99729 25%, #ffffff 50%, #E99729 75%, #ffffff 100%) border-box; 
     /* 【關鍵2】高度改成 200%，剛好容納兩個完整的「白->橘->白」循環 */
-    background-size: 100% 100%, 100% 200%;
-    box-shadow: 0 3px 12px rgba(226,173,41,.35);
-    animation: labelBubblePop .6s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear 3 forwards;
+    background-size: 100% 100%, 100% 200%; 
+    box-shadow: 0 3px 12px rgba(184,147,90,.4);
+    animation: labelBubblePop .95s cubic-bezier(.34,1.56,.64,1) both, plabelBorderFlow 2.2s linear infinite;
 
     z-index: 6;
     margin: -12px;
@@ -112,26 +108,26 @@
   }
   .prow{display:flex;gap:6px;justify-content:center;overflow:visible;}
   .prow.top{margin-top:25px;}
-  .psurface{height:26px;margin:5px 8px;border-radius:8px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
-  .pseat{width:74px;height:56px;border-radius:12px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
+  .psurface{height:26px;margin:5px 8px;border-radius:4px;background:repeating-linear-gradient(135deg,#fff 0 10px,#f3ece0 10px 20px);border:1px solid var(--line);}
+  .pseat{width:74px;height:56px;border-radius:6px;background:#fff;border:1.5px solid #e5ddcf;position:relative;overflow:visible;}
   .pseat.filled{background:#EFE9DC;}
 
   .pseat.match{
     border:2px solid var(--mc,var(--gold));
-    border-radius:12px;
+    border-radius:7px;
     background:#fff;
     animation:
-      bubbleEmerge .6s cubic-bezier(.34,1.56,.64,1) both,
-      seatGlow 1.8s ease-in-out 4 forwards,
-      bubbleFloat 2.6s ease-in-out 3 forwards;
-    animation-delay: 0s, 0s, .6s;
+      bubbleEmerge .95s cubic-bezier(.34,1.56,.64,1) both,
+      seatGlow 1.8s ease-in-out infinite,
+      bubbleFloat 2.6s ease-in-out infinite;
+    animation-delay: 0s, 0s, .95s;
     z-index:8;
   }
   .pseat.match::before{
     content:"";
     position:absolute;
     inset:0;
-    border-radius:12px;
+    border-radius:7px;
     box-shadow: inset 0 0 10px rgba(255,255,255,.5);
     pointer-events:none;
   }
@@ -139,9 +135,9 @@
     content:"";
     position:absolute;
     inset:-2px;
-    border-radius:14px;
+    border-radius:9px;
     border:1px solid var(--mc,var(--gold));
-    animation:seatRipple 1.8s ease-out 4 forwards;
+    animation:seatRipple 1.8s ease-out infinite;
     animation-delay:.35s;
     pointer-events:none;
   }
@@ -150,7 +146,7 @@
     background:radial-gradient(circle at 30% 28%, rgba(255,255,255,.95), rgba(255,255,255,.25) 55%, rgba(255,255,255,.05) 75%);
     border:1.2px solid var(--mc,rgba(255,255,255,.8));
     box-shadow:0 0 3px rgba(255,255,255,.6);
-    animation:bubbleRise 3s ease-in-out 3 forwards;}
+    animation:bubbleRise 3s ease-in-out infinite;}
   .pseat-bubble.b1{width:9px;height:9px;left:8px;bottom:4px;animation-delay:.2s;}
   .pseat-bubble.b2{width:6px;height:6px;right:10px;bottom:12px;animation-delay:1.1s;}
   .pseat-bubble.b3{width:7px;height:7px;left:32px;bottom:0px;animation-delay:2s;}
@@ -219,33 +215,25 @@
   .pseat-name{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:15px;font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
 
-  .result-panel{padding:20px 4px 4px;}
-  .result-card{background:#fff;border:none;border-radius:20px;padding:18px 20px 16px;margin-bottom:12px;box-shadow:0 12px 26px rgba(226,173,41,.14);position:relative;overflow:hidden;}
-  .result-card::before{content:"";position:absolute;top:-18px;right:-18px;width:70px;height:70px;border-radius:50%;background:var(--gold-light);}
-  .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:10px;color:var(--ink);position:relative;}
-  .result-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px dashed var(--line);position:relative;}
-  .result-empty-text{position:relative;display:block;}
+  .result-panel{padding:14px 4px 4px;}
+  .result-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+  .result-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;margin-bottom:8px;}
+  .result-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--line);justify-content: space-evenly;}
   .result-row:first-of-type{border-top:none;}
-  .result-row .rname{font-weight:700;flex:1;font-size:18px;color:var(--ink);}
-  .result-row .ricon{width:32px;height:32px;flex:none;border-radius:50%;background:var(--gold-light);display:flex;align-items:center;justify-content:center;}
-  .result-row .rmeal{font-size:14.5px;color:var(--ink-soft);flex:none;}
-  .result-row .rloc{font-size:14px;color:var(--ink);font-weight:700;white-space:nowrap;background:var(--gold);padding:6px 14px;border-radius:99px;}
-  .result-row.unassigned .rloc{color:#fff;background:var(--danger);}
-  .reset-btn{-webkit-appearance:none;appearance:none;display:block;width:fit-content;margin:18px auto 4px;padding:8px 2px;font-size:13px;font-weight:600;
-    color:var(--gold-deep);background:transparent;border:none;border-bottom:1.5px dashed var(--gold);letter-spacing:2px;}
-  .reset-btn:active{color:var(--ink);border-bottom-color:var(--ink);}
+  .result-row .rname{font-weight:700;flex:0.8;font-size:18px;}
+  .result-row .ricon{width:25px;height:25px;flex:none;}
+  .result-row .rmeal{font-size:18px;color:var(--ink-soft);}
+  .result-row .rloc{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
+  .result-row.unassigned .rloc{color:var(--danger);}
+  .reset-btn{display:block;width:100%;margin:12px 0 4px;padding:12px;font-size:14px;font-weight:700;
+    color:#fff;background:var(--ink);border:1px solid var(--ink);border-radius:10px;letter-spacing:1px;}
+  .reset-btn:active{background:var(--gold);border-color:var(--gold);}
 
   .stage-recenter{position:absolute;bottom:10px;right:10px;z-index:10;width:38px;height:38px;border-radius:50%;
     background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.15);
     display:none;align-items:center;justify-content:center;font-size:16px;color:var(--ink-soft);}
   .stage-zoom-hint{position:absolute;top:8px;right:10px;z-index:10;font-size:10.5px;color:var(--ink-soft);
     background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px;pointer-events:none;}
-
-  /* 從入口沿走道畫到座位的引導路線 */
-  .route-svg{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:20;opacity:0;}
-  #routePathEl{fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;
-    filter:drop-shadow(0 2px 3px rgba(226,173,41,.35));}
-  #routeArrowEl{fill:var(--gold);opacity:0;}
 
   /* 相機對焦框：總覽階段標出目標所在位置，帶「搜尋對焦」的手感 */
   .focus-frame{position:absolute;width:124px;height:124px;margin:-32px 0 0 -32px;pointer-events:none;z-index:15;
@@ -273,10 +261,10 @@
   /* 底片顆粒：拉近過程中疊一層淡淡的雜訊顆粒，模擬類比膠卷質感 */
   .film-grain{position:absolute;inset:-20px;z-index:45;pointer-events:none;opacity:0;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    background-size:150px 150px;
+    background-size:150px 150px;mix-blend-mode:overlay;
     transition:opacity .5s ease;
     animation:grainFlicker .5s steps(3) infinite;}
-  .stage-viewport.cinematic .film-grain{opacity:.22;}
+  .stage-viewport.cinematic .film-grain{opacity:.4;}
   @keyframes grainFlicker{
     0%{ transform:translate(0,0); }
     33%{ transform:translate(-2%,1.5%); }
@@ -324,19 +312,14 @@
 
 <div class="wrap">
   <div class="header">
-    <div class="header-eyebrow">
-      <span class="eyebrow-en">SEAT FINDER</span>
-      <span class="eyebrow-zh">婚宴座位查詢</span>
-    </div>
-    <h1>HsiEn <span class="amp">&amp;</span><br>LeeHsin</h1>
+    <h1>HsiEn & LeeHsin</h1>
+    <h1></h1>
+    <div class="rule"></div>
+    <p>婚宴座位查詢</p>
   </div>
 
   <div class="search-area">
     <div class="search-box">
-      <svg class="search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
-        <line x1="21" y1="21" x2="16.4" y2="16.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
       <input class="search-input" id="searchInput" placeholder="輸入姓名，例如：王小明" autocomplete="off" oninput="onSearchInput(this.value)" />
       <div class="suggest-list" id="suggestList" style="display:none;"></div>
     </div>
@@ -360,13 +343,6 @@
 <script>
 /* ---------------- config & state ---------------- */
 const CFG = window.APP_CONFIG || {};
-if(CFG.SUPABASE_URL){
-  // 越早開始建立連線（DNS/TLS）越好，不用等到真的要 fetch 資料才開始，省下建連線的時間
-  const preconnect = document.createElement('link');
-  preconnect.rel = 'preconnect';
-  preconnect.href = CFG.SUPABASE_URL;
-  document.head.appendChild(preconnect);
-}
 let guests = [];
 let tables = [];
 let landmarks = [];
@@ -422,19 +398,9 @@ async function loadData(){
 }
 
 function computeWorldBounds(){
-  if(tables.length===0 && landmarks.length===0){
-    worldBounds = {minX:0, minY:0, maxX:1200, maxY:800};
-    return;
-  }
-  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-  tables.forEach(t=>{
-    minX=Math.min(minX, t.x-16); minY=Math.min(minY, t.y-16);
-    maxX=Math.max(maxX, t.x+266); maxY=Math.max(maxY, t.y+272);
-  });
-  landmarks.forEach(l=>{
-    minX=Math.min(minX, l.x-16); minY=Math.min(minY, l.y-16);
-    maxX=Math.max(maxX, l.x+l.w+16); maxY=Math.max(maxY, l.y+l.h+16);
-  });
+  let minX=0,minY=0,maxX=1200,maxY=800;
+  tables.forEach(t=>{ maxX=Math.max(maxX, t.x+300); maxY=Math.max(maxY, t.y+280); });
+  landmarks.forEach(l=>{ maxX=Math.max(maxX, l.x+l.w+40); maxY=Math.max(maxY, l.y+l.h+40); });
   worldBounds = {minX, minY, maxX, maxY};
 }
 
@@ -475,7 +441,7 @@ function ptableHTML(t){
 }
 function plandmarkHTML(l){
   return '<div class="plandmark" style="left:'+l.x+'px; top:'+l.y+'px; width:'+l.w+'px; height:'+l.h+'px;">'+
-    '<img src="'+l.url+'" alt="" width="'+l.w+'" height="'+l.h+'" loading="eager" decoding="async" />'+
+    '<img src="'+l.url+'" alt="" />'+
     (l.name ? '<span class="plandmark-label">'+escapeHTML(l.name)+'</span>' : '') +
   '</div>';
 }
@@ -513,9 +479,8 @@ let currentT = {scale:1, tx:0, ty:0};
 const MIN_SCALE = 0.15, MAX_SCALE = 6;
 
 /* 可以在這裡調整節奏：延遲時間、拉近時長、緩動曲線 */
-const ZOOM_DELAY_MS = 350;       // 總覽停留多久才開始畫路線（找到座位後多快開始畫走道路線）
-const ZOOM_DURATION_MS = 1200;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
-const OVERVIEW_MARGIN = 0.97;    // 總覽時內容跟畫面邊框留多少緩衝（1 = 完全貼邊，數字越小留白越多）
+const ZOOM_DELAY_MS = 900;       // 總覽停留多久才開始拉近（對焦框「搜尋鎖定」的時間）
+const ZOOM_DURATION_MS = 1700;   // 拉近動畫時長（慢動作運鏡，數字越大越慢）
 const ZOOM_EASING = 'cubic-bezier(.65,0,.35,1)'; // 平滑、沉穩、不帶彈跳的電影運鏡曲線
 const RACK_FOCUS_BLUR = 2;       // 總覽階段的景深模糊程度（px），拉近時會慢慢變清晰
 
@@ -524,7 +489,7 @@ function applyTransform(t, animate, blurPx){
   const world = document.getElementById('stageWorld');
 
   const dur = (ZOOM_DURATION_MS/1000)+'s';
-  world.style.transition = animate ? ('transform '+dur+' '+ZOOM_EASING+', filter .3s ease-out') : 'none';
+  world.style.transition = animate ? ('transform '+dur+' '+ZOOM_EASING+', filter '+dur+' '+ZOOM_EASING) : 'none';
   world.style.transform = 'translate('+t.tx+'px,'+t.ty+'px) scale('+t.scale+')';
   if(blurPx!=null) world.style.filter = blurPx>0 ? ('blur('+blurPx+'px)') : 'none';
 }
@@ -551,7 +516,7 @@ function showFocusFrame(cx, cy, color){
   el.className = 'focus-frame';
   el.style.left = cx+'px';
   el.style.top = cy+'px';
-  el.style.setProperty('--pc', color || '#E2AD29');
+  el.style.setProperty('--pc', color || '#B8935A');
   el.innerHTML = '<span class="corner c-tl"></span><span class="corner c-tr"></span>'+
                   '<span class="corner c-bl"></span><span class="corner c-br"></span>';
   world.appendChild(el);
@@ -573,197 +538,39 @@ function showTitleCard(name, sub, color){
   const vp = document.getElementById('stageViewport');
   const el = document.createElement('div');
   el.className = 'title-card';
-  el.style.setProperty('--pc', color || '#E2AD29');
+  el.style.setProperty('--pc', color || '#B8935A');
   el.innerHTML = '<div class="tc-name">'+escapeHTML(name)+'</div><div class="tc-rule"></div>'+
     (sub ? '<div class="tc-sub">'+escapeHTML(sub)+'</div>' : '');
   vp.appendChild(el);
   setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 2900);
 }*/
 
-/* ---- 走道路線：從入口參照物走到座位，自動繞開桌子與其他參照物 ---- */
-function findEntranceLandmark(){
-  return landmarks.find(l => l.name && l.name.indexOf('入口') !== -1) || null;
-}
-
-function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
-  const MARGIN = 2; // 有些真實走道（例如排跟排中間）只有十幾 px，緩衝留太大會直接把整條走道吃掉
-  const rects = [];
-  tables.forEach(t=>{
-    if(t.id===excludeTableId) return; // 目標桌子本身不當障礙物，讓路徑能走到桌邊
-    rects.push({x0:t.x-MARGIN, y0:t.y-MARGIN, x1:t.x+tableW+MARGIN, y1:t.y+tableH+MARGIN});
-  });
-  landmarks.forEach(l=>{
-    if(entranceLandmark && l===entranceLandmark) return; // 入口本身不擋路
-    if(!l.blocksRoute) return; // 只有 admin 後台明確標記「會擋路」的參照物才當障礙物，不然大部分是地貼/裝飾，不該擋路
-    rects.push({x0:l.x-MARGIN, y0:l.y-MARGIN, x1:l.x+l.w+MARGIN, y1:l.y+l.h+MARGIN});
-  });
-  return rects;
-}
-
-/* 網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點。
-   會場裡最窄的走道可能只有十幾 px，所以網格解析度要夠細，緩衝也不能留太大，
-   不然細縫會被誤判成走不過去 */
-function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
-  const targetRect = {x0:targetTable.x, y0:targetTable.y, x1:targetTable.x+tableW, y1:targetTable.y+tableH};
-  const targetCenter = {x:(targetRect.x0+targetRect.x1)/2, y:(targetRect.y0+targetRect.y1)/2};
-
-  /* 搜尋範圍只框住「障礙物本身 + 入口 + 座位」的緊密範圍，不要留給總覽地圖用的大片留白，
-     不然 BFS 會發現繞去會場外面那圈空地反而路徑比較短，導致路線繞到桌子外圍去而不是走裡面的走道 */
-  let hx0=Math.min(entrancePt.x, targetCenter.x), hy0=Math.min(entrancePt.y, targetCenter.y);
-  let hx1=Math.max(entrancePt.x, targetCenter.x), hy1=Math.max(entrancePt.y, targetCenter.y);
-  obstacles.forEach(r=>{ hx0=Math.min(hx0,r.x0); hy0=Math.min(hy0,r.y0); hx1=Math.max(hx1,r.x1); hy1=Math.max(hy1,r.y1); });
-  const PAD = 24;
-  hx0-=PAD; hy0-=PAD; hx1+=PAD; hy1+=PAD;
-
-  /* CELL 之前是跟搜尋範圍的面積連動的，範圍一大（例如場地裡參照物一多、跨的範圍變大）
-     格子就會跟著變粗，粗到吃掉排跟排中間那種只有十幾 px 的真實走道，BFS 就會直接找不到路，
-     整個退回沒檢查障礙物的保底直線，看起來就像穿過桌子。改成不管範圍多大，格子都封頂在一個
-     夠細的值，最多犧牲一點效能，換取窄走道一定找得到 */
-  const wbw = Math.max(1, hx1-hx0), wbh = Math.max(1, hy1-hy0);
-  const CELL = Math.max(6, Math.min(10, Math.ceil(Math.sqrt((wbw*wbh)/70000))));
-  const gx0 = Math.floor(hx0/CELL)-1, gy0 = Math.floor(hy0/CELL)-1;
-  const gx1 = Math.ceil(hx1/CELL)+1, gy1 = Math.ceil(hy1/CELL)+1;
-  const cols = gx1-gx0, rows = gy1-gy0;
-
-  /* 入口跟座位本身周圍留一小圈保證可以走，避免障礙物的緩衝範圍剛好把起點/終點自己卡死找不到路 */
-  const CLEAR_R = Math.max(CELL*1.5, 16);
-  function cellBlocked(cx,cy){
-    const px = (gx0+cx+0.5)*CELL, py = (gy0+cy+0.5)*CELL;
-    if(Math.hypot(px-entrancePt.x, py-entrancePt.y) < CLEAR_R) return false;
-    if(Math.hypot(px-targetCenter.x, py-targetCenter.y) < CLEAR_R) return false;
-    for(let i=0;i<obstacles.length;i++){
-      const r = obstacles[i];
-      if(px>r.x0 && px<r.x1 && py>r.y0 && py<r.y1) return true;
-    }
-    return false;
-  }
-  function toCell(pt){ return { cx: Math.round(pt.x/CELL)-gx0, cy: Math.round(pt.y/CELL)-gy0 }; }
-
-  const start = toCell(entrancePt);
-  const goal = toCell(targetCenter);
-  const idx = (cx,cy)=> cy*cols+cx;
-  const visited = new Uint8Array(cols*rows);
-  const parent = new Int32Array(cols*rows).fill(-1);
-  const qx=[start.cx], qy=[start.cy];
-  visited[idx(start.cx,start.cy)] = 1;
-  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-  let head=0, found=false;
-  while(head<qx.length){
-    const cx=qx[head], cy=qy[head]; const ci=idx(cx,cy); head++;
-    if(cx===goal.cx && cy===goal.cy){ found=true; break; }
-    for(let d=0; d<dirs.length; d++){
-      const nx=cx+dirs[d][0], ny=cy+dirs[d][1];
-      if(nx<0||ny<0||nx>=cols||ny>=rows) continue;
-      const ni=idx(nx,ny);
-      if(visited[ni]) continue;
-      if(cellBlocked(nx,ny)) continue;
-      visited[ni]=1; parent[ni]=ci; qx.push(nx); qy.push(ny);
-    }
-  }
-  if(!found){
-    // 找不到路：退回一個 L 形轉折，至少看起來像走路轉彎，不會變成一條直接穿過所有桌子的斜線
-    const dx = Math.abs(targetCenter.x-entrancePt.x), dy = Math.abs(targetCenter.y-entrancePt.y);
-    const corner = dx>dy ? {x:targetCenter.x, y:entrancePt.y} : {x:entrancePt.x, y:targetCenter.y};
-    return [entrancePt, corner, targetCenter];
-  }
-
-  let cur = idx(goal.cx,goal.cy);
-  const cellsPath = [];
-  while(cur!==-1){ const cy=Math.floor(cur/cols), cx=cur-cy*cols; cellsPath.push({cx,cy}); cur=parent[cur]; }
-  cellsPath.reverse();
-
-  let pts = cellsPath.map(c=> ({x:(gx0+c.cx+0.5)*CELL, y:(gy0+c.cy+0.5)*CELL}));
-  pts[0] = entrancePt;
-
-  /* 路徑一進入目標桌子的範圍就截斷，讓箭頭停在桌邊而不是穿進桌子中心 */
-  const inset = 4;
-  let cutIndex = pts.length-1;
-  for(let i=0;i<pts.length;i++){
-    const p = pts[i];
-    if(p.x>targetRect.x0+inset && p.x<targetRect.x1-inset && p.y>targetRect.y0+inset && p.y<targetRect.y1-inset){ cutIndex=i; break; }
-  }
-  pts = pts.slice(0, cutIndex+1);
-  if(pts.length<2) pts.push(targetCenter);
-
-  /* 去掉共線的中間點，變成幾段直線轉折，而不是網格鋸齒 */
-  const simplified = [pts[0]];
-  for(let i=1;i<pts.length-1;i++){
-    const a=simplified[simplified.length-1], b=pts[i], c=pts[i+1];
-    const collinear = Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)) < 1;
-    if(!collinear) simplified.push(b);
-  }
-  simplified.push(pts[pts.length-1]);
-  return simplified;
-}
-
-function ensureRouteSvg(){
-  let svg = document.getElementById('routeSvg');
-  if(svg) return svg;
-  const world = document.getElementById('stageWorld');
-  svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('id','routeSvg');
-  svg.setAttribute('class','route-svg');
-  svg.innerHTML = '<path id="routePathEl"></path><g id="routeArrowEl"><polygon points="0,-9 15,0 0,9"></polygon></g>';
-  world.appendChild(svg);
-  return svg;
-}
-
-function drawRoute(points, onDone){
-  const world = document.getElementById('stageWorld');
-  const svg = ensureRouteSvg();
-  svg.setAttribute('width', parseFloat(world.style.width)||0);
-  svg.setAttribute('height', parseFloat(world.style.height)||0);
-  svg.style.transition = 'none';
-  svg.style.opacity = '1';
-  const pathEl = document.getElementById('routePathEl');
-  const arrowEl = document.getElementById('routeArrowEl');
-  const d = 'M'+points.map(p=> p.x.toFixed(1)+','+p.y.toFixed(1)).join(' L ');
-  pathEl.setAttribute('d', d);
-  const len = pathEl.getTotalLength();
-  pathEl.style.strokeDasharray = len;
-  pathEl.style.strokeDashoffset = len;
-  arrowEl.style.opacity = '1';
-
-  const dur = Math.max(700, Math.min(1800, len*1.1)); // 依路徑長度決定速度，太短太長都設個上下限
-  const start = performance.now();
-  function frame(now){
-    const p = Math.min(1, (now-start)/dur);
-    const e = 1 - Math.pow(1-p, 3);
-    pathEl.style.strokeDashoffset = len*(1-e);
-    const pt = pathEl.getPointAtLength(e*len);
-    // 終點附近「往前look」的點會被夾在路徑終點，跟目前點重疊變成 (0,0)，atan2(0,0) 會算出 0 度（朝右），
-    // 箭頭抵達終點時就會突然轉向右邊。改成方向用「往前 2px 跟往後 2px」這兩點的差來算，終點也不會退化成同一點
-    const ptFwd = pathEl.getPointAtLength(Math.min(len, e*len+2));
-    const ptBack = pathEl.getPointAtLength(Math.max(0, e*len-2));
-    const ang = Math.atan2(ptFwd.y-ptBack.y, ptFwd.x-ptBack.x) * 180/Math.PI;
-    arrowEl.setAttribute('transform', 'translate('+pt.x+','+pt.y+') rotate('+ang+')');
-    if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 80); }
-  }
-  requestAnimationFrame(frame);
-}
-
-let lastFocusBounds = null, lastFocusMargin = OVERVIEW_MARGIN, lastViewportW = 0;
-function focusOn(bounds, immediate, focusColor, primaryTable){
+let lastFocusBounds = null, lastFocusMargin = 0.92, lastViewportW = 0;
+function focusOn(bounds, immediate, focusColor, titleName, titleSub){
   const vp = document.getElementById('stageViewport');
   lastViewportW = vp.clientWidth;
-  const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, OVERVIEW_MARGIN);
+  const overviewT = computeTransform(worldBounds, vp.clientWidth, vp.clientHeight, 0.92);
   applyTransform(overviewT, false, 0);
   void vp.offsetWidth; // force reflow
   clearFocusFrame();
   vp.classList.remove('cinematic');
-  const existingRoute = document.getElementById('routeSvg');
-  if(existingRoute){ existingRoute.style.transition='none'; existingRoute.style.opacity='0'; }
-
   if(immediate){
-    lastFocusBounds = worldBounds; lastFocusMargin = OVERVIEW_MARGIN;
+    lastFocusBounds = worldBounds; lastFocusMargin = 0.92;
     document.getElementById('stageRecenter').style.display = 'none';
     return;
   }
 
-  function doZoom(){
+  const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
+  showFocusFrame(cx, cy, focusColor);
+  document.getElementById('stageWorld').style.filter = 'blur('+RACK_FOCUS_BLUR+'px)'; // 先稍微失焦，醞釀期待感
+
+  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
+  setTimeout(()=>{
+    clearFocusFrame();
     vp.classList.add('cinematic'); // 電影黑邊滑入 + 底片顆粒浮現
+    //showLensFlare(ZOOM_DURATION_MS); // 光暈隨運鏡掃過畫面
     const targetT = computeTransform(bounds, vp.clientWidth, vp.clientHeight, 0.78);
-    applyTransform(targetT, true, 0);
+    applyTransform(targetT, true, 0); // 運鏡拉近的同時，景深也一起慢慢對焦清晰
     lastFocusBounds = bounds; lastFocusMargin = 0.78;
     document.getElementById('stageRecenter').style.display = (bounds !== worldBounds) ? 'flex' : 'none';
 
@@ -774,28 +581,9 @@ function focusOn(bounds, immediate, focusColor, primaryTable){
 
     setTimeout(()=>{
       vp.classList.remove('cinematic'); // 安頓後黑邊與顆粒收回
+      // 開場字卡功能目前停用中（showTitleCard 已被註解掉），故不呼叫
     }, ZOOM_DURATION_MS + 600);
-  }
-
-  const entranceLandmark = primaryTable ? findEntranceLandmark() : null;
-
-  /* ---- 停留在總覽的「延遲時間」（找到座位前，全部桌子縮小總覽要停留多久才開始拉近） ---- */
-  if(entranceLandmark){
-    const entrancePt = { x: entranceLandmark.x + entranceLandmark.w/2, y: entranceLandmark.y + entranceLandmark.h };
-    const sampleTable = document.querySelector('.ptable');
-    const tableW = sampleTable ? sampleTable.offsetWidth : 250;
-    const tableH = sampleTable ? sampleTable.offsetHeight : 260;
-    const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
-    const route = findRoute(entrancePt, primaryTable, obstacles, tableW, tableH);
-    setTimeout(()=>{
-      drawRoute(route, doZoom);
-    }, ZOOM_DELAY_MS);
-  } else {
-    const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
-    showFocusFrame(cx, cy, focusColor);
-    document.getElementById('stageWorld').style.filter = 'blur('+RACK_FOCUS_BLUR+'px)'; // 先稍微失焦，醞釀期待感
-    setTimeout(()=>{ clearFocusFrame(); doZoom(); }, ZOOM_DELAY_MS);
-  }
+  }, ZOOM_DELAY_MS);
 }
 function recenter(){
   if(!lastFocusBounds) return;
@@ -822,10 +610,9 @@ function initGestures(){
   vp.addEventListener('pointerdown', (e)=>{
     vp.setPointerCapture(e.pointerId);
     if(activePointers.size===0){ currentT = readRenderedTransform(); document.getElementById('stageWorld').style.transition='none'; }
-    const rect0 = vp.getBoundingClientRect();
-    activePointers.set(e.pointerId, {x:e.clientX-rect0.left, y:e.clientY-rect0.top});
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     if(activePointers.size===1){
-      panStart = { x:e.clientX-rect0.left, y:e.clientY-rect0.top, tx0:currentT.tx, ty0:currentT.ty };
+      panStart = { x:e.clientX, y:e.clientY, tx0:currentT.tx, ty0:currentT.ty };
     } else if(activePointers.size===2){
       const pts = Array.from(activePointers.values());
       pinchStartDist = dist(pts[0], pts[1]);
@@ -838,11 +625,9 @@ function initGestures(){
   });
   vp.addEventListener('pointermove', (e)=>{
     if(!activePointers.has(e.pointerId)) return;
-    const rectM = vp.getBoundingClientRect();
-    const px = e.clientX-rectM.left, py = e.clientY-rectM.top;
-    activePointers.set(e.pointerId, {x:px, y:py});
+    activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     if(activePointers.size===1 && panStart){
-      const dx = px - panStart.x, dy = py - panStart.y;
+      const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
       applyTransform({scale:currentT.scale, tx:panStart.tx0+dx, ty:panStart.ty0+dy}, false);
     } else if(activePointers.size===2 && pinchStartDist){
       const pts = Array.from(activePointers.values());
@@ -931,7 +716,7 @@ function runSearch(baseName){
     highlightSet = new Set();
     highlightLabelKeys = new Set();
     renderStageStatic();
-    resultPanel.innerHTML = '<div class="result-card"><span class="result-empty-text">查無「'+escapeHTML(baseName)+'」的資料，請確認姓名是否正確</span></div>'+
+    resultPanel.innerHTML = '<div class="result-card">查無「'+escapeHTML(baseName)+'」的資料，請確認姓名是否正確</div>'+
       '<button class="reset-btn" onclick="resetSearch()">重新查詢</button>';
     return;
   }
@@ -967,7 +752,8 @@ function runSearch(baseName){
     const focusColor = mealColor(seatedMatched[0].meal);
     const primary = seatedMatched[0];
     const primaryTable = tables.find(x=>x.id===primary.tableId);
-    focusOn({minX,minY,maxX,maxY}, false, focusColor, primaryTable);
+    const primaryLabel = primaryTable ? (primary.seatIndex<3 ? (primaryTable.topName||(primaryTable.no+'A')) : (primaryTable.bottomName||(primaryTable.no+'B'))) : '';
+    focusOn({minX,minY,maxX,maxY}, false, focusColor, baseName, primaryLabel);
   } else {
     focusOn(worldBounds, true);
   }
