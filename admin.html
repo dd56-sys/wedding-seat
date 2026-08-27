@@ -300,7 +300,15 @@
         </button>
         <button class="btn btn-sm" onclick="downloadTemplate()">範例檔</button>
       </div>
-      <div class="hint">請使用 UTF-8 CSV，欄位需含「姓名」「主餐」「歸屬」（順序不拘）。</div>
+      <div class="hint">請使用 UTF-8 CSV，欄位需含「姓名」「主餐」「歸屬」（順序不拘）。只會新增賓客到待入座名單，不會建立桌子或座位。</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">匯入完整座位表（復原用）</div>
+      <button class="btn file-btn btn-block" style="border-color:var(--danger);color:var(--danger);">選擇座位表 CSV
+        <input type="file" id="seatingImportInput" accept=".csv" />
+      </button>
+      <div class="hint">請選擇本工具先前用「匯出座位表」產生的 CSV（欄位：桌次、區域名稱、座位、姓名、主餐、歸屬）。<b>匯入會取代目前畫面上所有桌子與賓客資料</b>，桌子會依原本的桌次編號、上／下排名稱重建，賓客也會回到原本的座位。參照物圖片不受影響。</div>
     </div>
 
     <div class="sec" id="syncSection">
@@ -933,6 +941,97 @@ document.getElementById('csvInput').addEventListener('change', function(e){
     error:function(){ alert('CSV 讀取失敗，請確認檔案為 UTF-8 編碼的 CSV 格式。'); e.target.value=''; }
   });
 });
+
+document.getElementById('seatingImportInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  Papa.parse(file, {
+    header:true, skipEmptyLines:true, encoding:'UTF-8',
+    complete:function(results){
+      importFullSeatingChart(results.data||[]);
+      e.target.value='';
+    },
+    error:function(){ alert('CSV 讀取失敗，請確認檔案為 UTF-8 編碼的 CSV 格式。'); e.target.value=''; }
+  });
+});
+
+function importFullSeatingChart(rows){
+  if(!rows || rows.length===0){ alert('這個檔案是空的，或格式不正確。'); return; }
+
+  function getVal(row, pattern){
+    const keys = Object.keys(row);
+    const k = keys.find(k=>pattern.test(k));
+    return k ? (row[k]||'').trim() : '';
+  }
+
+  const tableGroups = new Map(); // 桌次號碼 -> { regions:[依出現順序], rows:[] }
+  const unassignedRows = [];
+  let skipped = 0;
+
+  rows.forEach(row=>{
+    const tableRaw = getVal(row, /桌次/);
+    const region = getVal(row, /區域/);
+    const seatNoRaw = getVal(row, /座位/);
+    const name = getVal(row, /姓名/);
+    const meal = getVal(row, /主餐/);
+    const category = getVal(row, /歸屬/);
+    if(!name) return;
+
+    if(!tableRaw || tableRaw==='未安排'){
+      unassignedRows.push({ name, meal, category });
+      return;
+    }
+    const tableNo = parseInt(tableRaw.replace(/[^0-9]/g,''), 10);
+    if(isNaN(tableNo)){ skipped++; return; }
+
+    if(!tableGroups.has(tableNo)) tableGroups.set(tableNo, { regions:[], rows:[] });
+    const g = tableGroups.get(tableNo);
+    if(region && !g.regions.includes(region)) g.regions.push(region);
+    const seatNo = parseInt(seatNoRaw, 10) || 1;
+    g.rows.push({ region, seatNo, name, meal, category });
+  });
+
+  if(tableGroups.size===0 && unassignedRows.length===0){
+    alert('沒有辨識出任何桌次或賓客資料，請確認 CSV 欄位是否包含「桌次」「區域名稱」「座位」「姓名」「主餐」「歸屬」。');
+    return;
+  }
+
+  if(!confirm('即將匯入 '+tableGroups.size+' 桌、共 '+rows.length+' 筆資料，這會取代目前畫面上所有桌子與賓客（參照物圖片不受影響）。確定要繼續嗎？')) return;
+
+  const newTables = [];
+  const newGuests = [];
+  let gId = 1;
+  const sortedTableNos = Array.from(tableGroups.keys()).sort((a,b)=>a-b);
+
+  sortedTableNos.forEach((no, idx)=>{
+    const g = tableGroups.get(no);
+    const topName = g.regions[0] || (no+'A');
+    const bottomName = g.regions[1] || (no+'B');
+    const tableId = 't'+(idx+1);
+    const x = 40 + (idx % 4) * 280;
+    const y = 40 + Math.floor(idx/4) * 200;
+    newTables.push({ id: tableId, no, x, y, topName, bottomName });
+    g.rows.forEach(r=>{
+      const half = (r.region === topName) ? 0 : 3;
+      const seatIndex = half + (Math.max(1, Math.min(3, r.seatNo)) - 1);
+      newGuests.push({ id:'g'+(gId++), name:r.name, meal:r.meal, category:r.category, tableId, seatIndex });
+    });
+  });
+  unassignedRows.forEach(r=>{
+    newGuests.push({ id:'g'+(gId++), name:r.name, meal:r.meal, category:r.category, tableId:null, seatIndex:null });
+  });
+
+  tables = newTables;
+  guests = newGuests;
+  recalcSeq();
+  selectedGuestId = null;
+  multiSelectedIds = new Set();
+  render();
+
+  let msg = '匯入完成！共還原 '+newTables.length+' 桌、'+newGuests.length+' 位賓客。';
+  if(skipped>0) msg += '\n有 '+skipped+' 筆資料因為桌次欄位無法辨識而被略過。';
+  alert(msg);
+}
 document.getElementById('landmarkInput').addEventListener('change', async function(e){
   const file = e.target.files[0];
   if(!file){ return; }
