@@ -767,7 +767,10 @@ function focusOn(bounds, immediate, focusColor, primaryGuest){
     const tableH = sampleTable ? sampleTable.offsetHeight : 260;
     const obstacles = buildRouteObstacles(entranceLandmark, tableW, tableH);
     const targetPt = routeTargetForSeat(primaryTable, primaryGuest.seatIndex, tableW, tableH);
-    const route = findRoute(entrancePt, targetPt, obstacles);
+    const isTopRow = primaryGuest.seatIndex < 3;
+    const approachPt = isTopRow ? {x:targetPt.x, y:targetPt.y-32} : targetPt;
+    const route = findRoute(entrancePt, approachPt, obstacles);
+    if(route && isTopRow) route.push(targetPt);
     setTimeout(()=>{
       if(route && route.length>1) drawRoute(route, doZoom);
       else doZoom();
