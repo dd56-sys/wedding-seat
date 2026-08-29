@@ -606,6 +606,8 @@ function routeTargetForSeat(table, seatIndex, tableW, tableH){
   return {x, y:seatIndex < 3 ? table.y-gap : table.y+tableH+gap};
 }
 
+function arrowAngleForSeat(seatIndex){ return seatIndex < 3 ? 90 : null; }
+
 /* 網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點。 */
 function findRoute(entrancePt, targetPt, obstacles){
   let hx0=Math.min(entrancePt.x, targetPt.x), hy0=Math.min(entrancePt.y, targetPt.y);
@@ -687,7 +689,7 @@ function ensureRouteSvg(){
   return svg;
 }
 
-function drawRoute(points, onDone){
+function drawRoute(points, onDone, arrowAngle){
   const world = document.getElementById('stageWorld');
   const svg = ensureRouteSvg();
   svg.setAttribute('width', parseFloat(world.style.width)||0);
@@ -714,7 +716,7 @@ function drawRoute(points, onDone){
     // 箭頭抵達終點時就會突然轉向右邊。改成方向用「往前 2px 跟往後 2px」這兩點的差來算，終點也不會退化成同一點
     const ptFwd = pathEl.getPointAtLength(Math.min(len, e*len+2));
     const ptBack = pathEl.getPointAtLength(Math.max(0, e*len-2));
-    const ang = Math.atan2(ptFwd.y-ptBack.y, ptFwd.x-ptBack.x) * 180/Math.PI;
+    const ang = arrowAngle == null ? Math.atan2(ptFwd.y-ptBack.y, ptFwd.x-ptBack.x) * 180/Math.PI : arrowAngle;
     arrowEl.setAttribute('transform', 'translate('+pt.x+','+pt.y+') rotate('+ang+')');
     if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 80); }
   }
@@ -767,12 +769,9 @@ function focusOn(bounds, immediate, focusColor, primaryGuest){
     const tableH = sampleTable ? sampleTable.offsetHeight : 260;
     const obstacles = buildRouteObstacles(entranceLandmark, tableW, tableH);
     const targetPt = routeTargetForSeat(primaryTable, primaryGuest.seatIndex, tableW, tableH);
-    const isTopRow = primaryGuest.seatIndex < 3;
-    const approachPt = isTopRow ? {x:targetPt.x, y:targetPt.y-32} : targetPt;
-    const route = findRoute(entrancePt, approachPt, obstacles);
-    if(route && isTopRow) route.push(targetPt);
+    const route = findRoute(entrancePt, targetPt, obstacles);
     setTimeout(()=>{
-      if(route && route.length>1) drawRoute(route, doZoom);
+      if(route && route.length>1) drawRoute(route, doZoom, arrowAngleForSeat(primaryGuest.seatIndex));
       else doZoom();
     }, ZOOM_DELAY_MS);
   } else {
