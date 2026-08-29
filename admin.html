@@ -1379,7 +1379,7 @@ function landmarkHTML(l){
     '<span class="landmark-lock" onclick="toggleLandmarkLock(\''+l.id+'\')" title="'+(locked?'解鎖位置':'鎖定位置')+'">'+(locked?'🔒':'🔓')+'</span>'+
     '<span class="landmark-del" onclick="onDeleteLandmark(\''+l.id+'\')" title="刪除參照物">✕</span>'+
     (locked ? '' : '<span class="landmark-resize" onpointerdown="onLandmarkResizeStart(event,\''+l.id+'\')" title="拖曳調整大小">⤡</span>')+
-    '<span class="landmark-block'+(blocks?' blocking':'')+'" onclick="toggleLandmarkBlock(\''+l.id+'\')" title="'+(blocks?'會擋住賓客頁的走道路線（點擊改成不擋路）':'不會擋住賓客頁的走道路線（點擊改成擋路）')+'">'+(blocks?'🚧':'🚶')+'</span>'+
+    '<span class="landmark-block'+(blocks?' blocking':'')+'" onclick="toggleLandmarkBlock(\''+l.id+'\')" title="'+(blocks?'路徑障礙已開啟，賓客導引會繞過此物件（點擊允許穿越）':'此物件目前可被路徑穿越；花卉走道請點擊設為障礙')+'">'+(blocks?'🚧':'🚶')+'</span>'+
     '<span class="landmark-label" onclick="renameLandmark(\''+l.id+'\')" title="點選重新命名">'+escapeHTML(l.name||'參照物')+'</span>'+
   '</div>';
 }

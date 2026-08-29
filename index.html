@@ -660,12 +660,7 @@ function findRoute(entrancePt, targetTable, obstacles, tableW, tableH){
       visited[ni]=1; parent[ni]=ci; qx.push(nx); qy.push(ny);
     }
   }
-  if(!found){
-    // 找不到路：退回一個 L 形轉折，至少看起來像走路轉彎，不會變成一條直接穿過所有桌子的斜線
-    const dx = Math.abs(targetCenter.x-entrancePt.x), dy = Math.abs(targetCenter.y-entrancePt.y);
-    const corner = dx>dy ? {x:targetCenter.x, y:entrancePt.y} : {x:entrancePt.x, y:targetCenter.y};
-    return [entrancePt, corner, targetCenter];
-  }
+  if(!found) return null;
 
   let cur = idx(goal.cx,goal.cy);
   const cellsPath = [];
@@ -788,7 +783,8 @@ function focusOn(bounds, immediate, focusColor, primaryTable){
     const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
     const route = findRoute(entrancePt, primaryTable, obstacles, tableW, tableH);
     setTimeout(()=>{
-      drawRoute(route, doZoom);
+      if(route && route.length>1) drawRoute(route, doZoom);
+      else doZoom();
     }, ZOOM_DELAY_MS);
   } else {
     const cx = (bounds.minX+bounds.maxX)/2, cy = (bounds.minY+bounds.maxY)/2;
