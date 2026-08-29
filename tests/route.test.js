@@ -59,15 +59,19 @@ test('targets the correct side of a table for each seat row', () => {
 
   const topTarget = routeTargetForSeat(table, 0, tableW, tableH);
   const bottomTarget = routeTargetForSeat(table, 3, tableW, tableH);
-  const topRoute = findRoute(entrance, topTarget, [tableBlock]);
+  const topApproach = {x:topTarget.x, y:topTarget.y-32};
+  const topRoute = findRoute(entrance, topApproach, [tableBlock]);
   const bottomRoute = findRoute(entrance, bottomTarget, [tableBlock]);
 
   assert.ok(topRoute);
   assert.ok(bottomRoute);
+  topRoute.push(topTarget);
   assert.deepEqual(topRoute.at(-1), topTarget);
   assert.deepEqual(bottomRoute.at(-1), bottomTarget);
   assert.ok(topTarget.y < table.y);
   assert.ok(bottomTarget.y > table.y + tableH);
+  assert.deepEqual(topRoute.at(-2), topApproach);
+  assert.ok(topRoute.at(-2).y < topRoute.at(-1).y);
   assert.equal(arrowAngleForSeat(0), 90);
   assert.equal(arrowAngleForSeat(3), null);
   assert.equal(routeIntersects(topRoute, tableBlock), false);
