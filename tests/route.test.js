@@ -8,7 +8,7 @@ function loadRouteFunctions(){
   const start = html.indexOf('function buildRouteObstacles(');
   const end = html.indexOf('\nfunction ensureRouteSvg', start);
   const source = html.slice(start, end);
-  return new Function('tables', 'landmarks', source + '; return { buildRouteObstacles, findRoute, routeTargetForSeat };');
+  return new Function('tables', 'landmarks', source + '; return { buildRouteObstacles, findRoute, routeTargetForSeat, arrowAngleForSeat };');
 }
 
 function segmentIntersectsRect(a, b, rect){
@@ -50,7 +50,7 @@ test('does not draw a route when obstacles fully enclose the destination', () =>
 });
 
 test('targets the correct side of a table for each seat row', () => {
-  const { findRoute, routeTargetForSeat } = loadRouteFunctions()([], []);
+  const { findRoute, routeTargetForSeat, arrowAngleForSeat } = loadRouteFunctions()([], []);
   const table = {id:'table-1', x:200, y:180};
   const tableW = 250;
   const tableH = 260;
@@ -59,19 +59,17 @@ test('targets the correct side of a table for each seat row', () => {
 
   const topTarget = routeTargetForSeat(table, 0, tableW, tableH);
   const bottomTarget = routeTargetForSeat(table, 3, tableW, tableH);
-  const topApproach = {x:topTarget.x, y:topTarget.y-32};
-  const topRoute = findRoute(entrance, topApproach, [tableBlock]);
+  const topRoute = findRoute(entrance, topTarget, [tableBlock]);
   const bottomRoute = findRoute(entrance, bottomTarget, [tableBlock]);
 
   assert.ok(topRoute);
   assert.ok(bottomRoute);
-  topRoute.push(topTarget);
   assert.deepEqual(topRoute.at(-1), topTarget);
   assert.deepEqual(bottomRoute.at(-1), bottomTarget);
   assert.ok(topTarget.y < table.y);
   assert.ok(bottomTarget.y > table.y + tableH);
-  assert.deepEqual(topRoute.at(-2), topApproach);
-  assert.ok(topRoute.at(-2).y < topRoute.at(-1).y);
+  assert.equal(arrowAngleForSeat(0), 90);
+  assert.equal(arrowAngleForSeat(3), null);
   assert.equal(routeIntersects(topRoute, tableBlock), false);
   assert.equal(routeIntersects(bottomRoute, tableBlock), false);
 });
