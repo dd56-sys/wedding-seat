@@ -601,10 +601,13 @@ function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
 }
 
 function routeTargetForSeat(table, seatIndex, tableW, tableH){
-  // 一律從桌子下緣切進去（不分上排/下排），避免上排要先繞到桌子上方再折回來
+  // 一律從桌子下緣進場（不繞去桌子外面上方），但終點依上排/下排停在不同高度，
+  // 上排（A）會多切進桌子內部一點，箭頭才會指向 A 而不是停在桌子最下緣看起來像指向 B。
+  // 目標桌子本身已經被排除在障礙物之外，走到桌子內部任何高度都是安全的。
   const column = Math.max(0, Math.min(2, seatIndex % 3));
   const x = table.x + tableW * ((column + .5) / 3);
-  return {x, y: table.y + tableH + 6};
+  const y = seatIndex < 3 ? table.y + tableH * 0.18 : table.y + tableH + 6;
+  return {x, y};
 }
 
 /* 網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點。 */
