@@ -746,6 +746,15 @@ function drawRoute(points, onDone, arrowAngle){
   pathEl.style.strokeDashoffset = len;
   arrowEl.style.opacity = '1';
 
+  // 終點方向直接從路徑資料算最後一段真正的方向（挑最後一段長度夠長、不是退化成一點的線段），
+  // 不要靠 getPointAtLength 在終點附近取樣——如果最後一段很短（例如轉角補丁插的小段），
+  // 取樣窗口會跨到前一段，箭頭停下來時方向就會是錯的，指到別的地方去而不是指向桌子。
+  let finalAngle = 0;
+  for(let i=points.length-1; i>0; i--){
+    const a=points[i-1], b=points[i];
+    if(Math.hypot(b.x-a.x, b.y-a.y) > 12){ finalAngle = Math.atan2(b.y-a.y, b.x-a.x) * 180/Math.PI; break; }
+  }
+
   const dur = Math.max(700, Math.min(1800, len*1.1)); // 依路徑長度決定速度，太短太長都設個上下限
   const start = performance.now();
   function frame(now){
@@ -753,11 +762,14 @@ function drawRoute(points, onDone, arrowAngle){
     const e = 1 - Math.pow(1-p, 3);
     pathEl.style.strokeDashoffset = len*(1-e);
     const pt = pathEl.getPointAtLength(e*len);
-    // 終點附近「往前look」的點會被夾在路徑終點，跟目前點重疊變成 (0,0)，atan2(0,0) 會算出 0 度（朝右），
-    // 箭頭抵達終點時就會突然轉向右邊。改成方向用「往前 2px 跟往後 2px」這兩點的差來算，終點也不會退化成同一點
-    const ptFwd = pathEl.getPointAtLength(Math.min(len, e*len+2));
-    const ptBack = pathEl.getPointAtLength(Math.max(0, e*len-2));
-    const ang = arrowAngle == null ? Math.atan2(ptFwd.y-ptBack.y, ptFwd.x-ptBack.x) * 180/Math.PI : arrowAngle;
+    let ang;
+    if(p>=1){
+      ang = arrowAngle == null ? finalAngle : arrowAngle;
+    } else {
+      const ptFwd = pathEl.getPointAtLength(Math.min(len, e*len+2));
+      const ptBack = pathEl.getPointAtLength(Math.max(0, e*len-2));
+      ang = arrowAngle == null ? Math.atan2(ptFwd.y-ptBack.y, ptFwd.x-ptBack.x) * 180/Math.PI : arrowAngle;
+    }
     arrowEl.setAttribute('transform', 'translate('+pt.x+','+pt.y+') rotate('+ang+')');
     if(p<1){ requestAnimationFrame(frame); } else if(onDone){ setTimeout(onDone, 80); }
   }
