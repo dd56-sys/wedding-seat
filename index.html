@@ -601,12 +601,11 @@ function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
 }
 
 function routeTargetForSeat(table, seatIndex, tableW, tableH){
-  // 一律從桌子下緣進場（不繞去桌子外面上方），但終點依上排/下排停在不同高度，
-  // 上排（A）會多切進桌子內部一點，箭頭才會指向 A 而不是停在桌子最下緣看起來像指向 B。
-  // 目標桌子本身已經被排除在障礙物之外，走到桌子內部任何高度都是安全的。
+  // 下排（B）從桌子下緣進場；上排（A）從桌子上方進場——這時候目標桌子要當成一般障礙物
+  // （呼叫端不會排除它），BFS 才會被逼著繞去桌子外面再從上面切下來，不會直接貫穿桌子本體
   const column = Math.max(0, Math.min(2, seatIndex % 3));
   const x = table.x + tableW * ((column + .5) / 3);
-  const y = seatIndex < 3 ? table.y + tableH * 0.18 : table.y + tableH + 6;
+  const y = seatIndex < 3 ? table.y - 6 : table.y + tableH + 6;
   return {x, y};
 }
 
@@ -769,7 +768,9 @@ function focusOn(bounds, immediate, focusColor, primaryGuest){
     const sampleTable = document.querySelector('.ptable');
     const tableW = sampleTable ? sampleTable.offsetWidth : 250;
     const tableH = sampleTable ? sampleTable.offsetHeight : 260;
-    const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
+    const isTopRow = primaryGuest.seatIndex < 3;
+    const excludeId = isTopRow ? null : primaryTable.id; // 上排要繞去桌子上方，目標桌子本身不能排除，才會被當障礙物繞開
+    const obstacles = buildRouteObstacles(excludeId, entranceLandmark, tableW, tableH);
     const targetPt = routeTargetForSeat(primaryTable, primaryGuest.seatIndex, tableW, tableH);
     const route = findRoute(entrancePt, targetPt, obstacles);
     setTimeout(()=>{
