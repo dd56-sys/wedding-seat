@@ -749,10 +749,14 @@ function drawRoute(points, onDone, arrowAngle){
   // 終點方向直接從路徑資料算最後一段真正的方向（挑最後一段長度夠長、不是退化成一點的線段），
   // 不要靠 getPointAtLength 在終點附近取樣——如果最後一段很短（例如轉角補丁插的小段），
   // 取樣窗口會跨到前一段，箭頭停下來時方向就會是錯的，指到別的地方去而不是指向桌子。
-  let finalAngle = 0;
+  // 同時記錄「最後這幾小段補丁」總共多長（stubLen），箭頭走到只剩這麼短的距離時就直接鎖定終點方向，
+  // 不要再逐幀取樣——不然箭頭穿過這幾個小段的那零點幾秒，方向會因為線段太短而抖動、最後才突然轉正。
+  let finalAngle = 0, stubLen = 0;
   for(let i=points.length-1; i>0; i--){
     const a=points[i-1], b=points[i];
-    if(Math.hypot(b.x-a.x, b.y-a.y) > 12){ finalAngle = Math.atan2(b.y-a.y, b.x-a.x) * 180/Math.PI; break; }
+    const segLen = Math.hypot(b.x-a.x, b.y-a.y);
+    if(segLen > 12){ finalAngle = Math.atan2(b.y-a.y, b.x-a.x) * 180/Math.PI; break; }
+    stubLen += segLen;
   }
 
   const dur = Math.max(700, Math.min(1800, len*1.1)); // 依路徑長度決定速度，太短太長都設個上下限
@@ -763,7 +767,7 @@ function drawRoute(points, onDone, arrowAngle){
     pathEl.style.strokeDashoffset = len*(1-e);
     const pt = pathEl.getPointAtLength(e*len);
     let ang;
-    if(p>=1){
+    if(p>=1 || (len-e*len) <= stubLen){
       ang = arrowAngle == null ? finalAngle : arrowAngle;
     } else {
       const ptFwd = pathEl.getPointAtLength(Math.min(len, e*len+2));
