@@ -703,7 +703,19 @@ function findRoute(entrancePt, targetPt, obstacles){
     pulled.push(simplified[j]);
     i = j;
   }
-  return pulled;
+
+  /* entrancePt/targetPt 是真實座標，不是格線中心，跟第一個/最後一個格線點常常對不齊 x 或 y，
+     頭尾這一小段就會變成斜線。這裡補一道：只要相鄰兩點不是同一個 x 或 y，就插入一個轉角。 */
+  const final = [pulled[0]];
+  for(let k=1;k<pulled.length;k++){
+    const a=final[final.length-1], b=pulled[k];
+    if(Math.abs(a.x-b.x)>0.5 && Math.abs(a.y-b.y)>0.5){
+      const cornerA={x:b.x,y:a.y}, cornerB={x:a.x,y:b.y};
+      final.push(Math.abs(b.x-a.x)>Math.abs(b.y-a.y) ? cornerA : cornerB);
+    }
+    final.push(b);
+  }
+  return final;
 }
 
 function ensureRouteSvg(){
