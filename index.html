@@ -675,7 +675,31 @@ function findRoute(entrancePt, targetPt, obstacles){
     if(!collinear) simplified.push(b);
   }
   simplified.push(pts[pts.length-1]);
-  return simplified;
+
+  /* BFS 只能走格線，同樣長度的路徑常常會貼著障礙物邊緣繞一小段沒必要的鋸齒（差 1px 都算「沒撞到」）。
+     用視線法把能直線互看（不穿過任何障礙物）的點直接拉直，去掉這種貼邊小拐彎，不會改變路徑合不合法 */
+  function segmentHitsObstacle(a, b){
+    const len = Math.hypot(b.x-a.x, b.y-a.y);
+    const steps = Math.max(1, Math.ceil(len/4));
+    for(let s=0; s<=steps; s++){
+      const t = s/steps;
+      const px = a.x+(b.x-a.x)*t, py = a.y+(b.y-a.y)*t;
+      for(let k=0;k<obstacles.length;k++){
+        const r = obstacles[k];
+        if(px>r.x0 && px<r.x1 && py>r.y0 && py<r.y1) return true;
+      }
+    }
+    return false;
+  }
+  const pulled = [simplified[0]];
+  let i = 0;
+  while(i < simplified.length-1){
+    let j = simplified.length-1;
+    while(j > i+1 && segmentHitsObstacle(simplified[i], simplified[j])) j--;
+    pulled.push(simplified[j]);
+    i = j;
+  }
+  return pulled;
 }
 
 function ensureRouteSvg(){
