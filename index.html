@@ -695,7 +695,11 @@ function findRoute(entrancePt, targetPt, obstacles){
   let i = 0;
   while(i < simplified.length-1){
     let j = simplified.length-1;
-    while(j > i+1 && segmentHitsObstacle(simplified[i], simplified[j])) j--;
+    // 只拉去「同一個 x 或同一個 y」的點，保證還是走直角，不會切出斜線
+    while(j > i+1 && (
+      (simplified[j].x!==simplified[i].x && simplified[j].y!==simplified[i].y) ||
+      segmentHitsObstacle(simplified[i], simplified[j])
+    )) j--;
     pulled.push(simplified[j]);
     i = j;
   }
