@@ -585,10 +585,11 @@ function findEntranceLandmark(){
   return landmarks.find(l => l.name && l.name.indexOf('入口') !== -1) || null;
 }
 
-function buildRouteObstacles(entranceLandmark, tableW, tableH){
+function buildRouteObstacles(excludeTableId, entranceLandmark, tableW, tableH){
   const MARGIN = 2;
   const rects = [];
   tables.forEach(t=>{
+    if(t.id===excludeTableId) return; // 目標桌子本身不當障礙物，讓路徑能走到桌邊
     rects.push({x0:t.x-MARGIN, y0:t.y-MARGIN, x1:t.x+tableW+MARGIN, y1:t.y+tableH+MARGIN});
   });
   landmarks.forEach(l=>{
@@ -600,13 +601,11 @@ function buildRouteObstacles(entranceLandmark, tableW, tableH){
 }
 
 function routeTargetForSeat(table, seatIndex, tableW, tableH){
+  // 一律從桌子下緣切進去（不分上排/下排），避免上排要先繞到桌子上方再折回來
   const column = Math.max(0, Math.min(2, seatIndex % 3));
   const x = table.x + tableW * ((column + .5) / 3);
-  const gap = 24;
-  return {x, y:seatIndex < 3 ? table.y-gap : table.y+tableH+gap};
+  return {x, y: table.y + tableH + 6};
 }
-
-function arrowAngleForSeat(seatIndex){ return seatIndex < 3 ? 90 : null; }
 
 /* 網格 + BFS：找一條不穿過桌子/參照物的路徑，再簡化成幾個轉折點。 */
 function findRoute(entrancePt, targetPt, obstacles){
@@ -767,14 +766,11 @@ function focusOn(bounds, immediate, focusColor, primaryGuest){
     const sampleTable = document.querySelector('.ptable');
     const tableW = sampleTable ? sampleTable.offsetWidth : 250;
     const tableH = sampleTable ? sampleTable.offsetHeight : 260;
-    const obstacles = buildRouteObstacles(entranceLandmark, tableW, tableH);
+    const obstacles = buildRouteObstacles(primaryTable.id, entranceLandmark, tableW, tableH);
     const targetPt = routeTargetForSeat(primaryTable, primaryGuest.seatIndex, tableW, tableH);
-    const isTopRow = primaryGuest.seatIndex < 3;
-    const approachPt = isTopRow ? {x:targetPt.x, y:targetPt.y-32} : targetPt;
-    const route = findRoute(entrancePt, approachPt, obstacles);
-    if(route && isTopRow) route.push(targetPt);
+    const route = findRoute(entrancePt, targetPt, obstacles);
     setTimeout(()=>{
-      if(route && route.length>1) drawRoute(route, doZoom, arrowAngleForSeat(primaryGuest.seatIndex));
+      if(route && route.length>1) drawRoute(route, doZoom);
       else doZoom();
     }, ZOOM_DELAY_MS);
   } else {
