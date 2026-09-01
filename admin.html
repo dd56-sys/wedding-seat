@@ -146,8 +146,13 @@
   .landmark-block.blocking{border-color:var(--danger);background:#fdeceb;}
   .table-topbar{display:flex;justify-content:space-between;align-items:center;padding:0 4px 2px;}
   .table-no{display:inline-flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:11px;font-weight:600;color:#b3a48c;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;}
+  .table-actions{display:flex;align-items:center;gap:2px;}
+  .table-lock{font-size:11px;color:#c9bdae;padding:2px 5px;border-radius:4px;cursor:pointer;}
+  .table-lock:hover{color:var(--gold-deep);background:#fff;}
   .table-del{font-size:13px;color:#c9bdae;padding:2px 6px;border-radius:4px;}
   .table-del:hover{color:var(--danger);background:#fff;}
+  .table.locked{outline:1.5px dashed #b3a89a;outline-offset:3px;}
+  .table.locked .table-surface{cursor:default;}
   .table-label-row{display:flex;justify-content:center;}
   .table-label{display:inline-flex;align-items:center;gap:4px;font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:var(--ink);
     background:#fff;border:1.5px dashed var(--gold);border-radius:14px;padding:2px 10px;cursor:pointer;}
@@ -698,7 +703,7 @@ function updateMultiSelectBar(){
   }
 }
 
-const MARQUEE_EXCLUDE_SELECTOR = '.seat, .table-surface, .landmark img, .landmark-resize, .landmark-lock, .landmark-del, .table-label, .landmark-label, .table-del';
+const MARQUEE_EXCLUDE_SELECTOR = '.seat, .table-surface, .landmark img, .landmark-resize, .landmark-lock, .landmark-del, .table-label, .landmark-label, .table-del, .table-lock';
 function onCanvasPointerDown(e){
   if(!multiSelectMode) return;
   if(e.target.closest(MARQUEE_EXCLUDE_SELECTOR)) return;
@@ -811,6 +816,7 @@ function onTablePointerDown(e, tableId){
   const canvas = document.getElementById('canvas');
   const rect = canvas.getBoundingClientRect();
   const t = tables.find(x=>x.id===tableId);
+  if(!t || t.locked) return;
   dragState = { tableId, offsetX: (e.clientX-rect.left)/zoom - t.x, offsetY: (e.clientY-rect.top)/zoom - t.y, snappedX:null, snappedY:null };
   document.addEventListener('pointermove', onTablePointerMove);
   document.addEventListener('pointerup', onTablePointerUp);
@@ -1386,9 +1392,13 @@ function landmarkHTML(l){
 function tableHTML(t){
   const top=[0,1,2].map(i=>seatCellHTML(t,i)).join('');
   const bottom=[3,4,5].map(i=>seatCellHTML(t,i)).join('');
-  return '<div class="table" id="table-'+t.id+'" style="left:'+t.x+'px; top:'+t.y+'px;">'+
+  const locked = !!t.locked;
+  return '<div class="table'+(locked?' locked':'')+'" id="table-'+t.id+'" style="left:'+t.x+'px; top:'+t.y+'px;">'+
     '<div class="table-topbar"><span class="table-no">#'+t.no+'</span>'+
-    '<span class="table-del" onclick="onDeleteTable(\''+t.id+'\')" title="刪除桌子">✕</span></div>'+
+    '<span class="table-actions">'+
+    '<span class="table-lock" onclick="toggleTableLock(\''+t.id+'\')" title="'+(locked?'解鎖位置':'鎖定位置')+'">'+(locked?'🔒':'🔓')+'</span>'+
+    '<span class="table-del" onclick="onDeleteTable(\''+t.id+'\')" title="刪除桌子">✕</span>'+
+    '</span></div>'+
     '<div class="table-label-row"><span class="table-label" onclick="renameTableLabel(\''+t.id+'\',\'top\')" title="點選重新命名">'+
       escapeHTML(t.topName||(t.no+'A'))+'<span class="pencil">✎</span></span></div>'+
     '<div class="seat-row row-top">'+top+'</div>'+
@@ -1496,6 +1506,12 @@ function renameLandmark(id){
 function onDeleteLandmark(id){
   if(!confirm('確定要刪除這個參照物嗎？')) return;
   landmarks = landmarks.filter(x=>x.id!==id);
+  render();
+}
+function toggleTableLock(id){
+  const t = tables.find(x=>x.id===id);
+  if(!t) return;
+  t.locked = !t.locked;
   render();
 }
 function toggleLandmarkLock(id){
